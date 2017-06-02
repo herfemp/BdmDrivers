@@ -5,10 +5,7 @@
  *  Author: Chriva
  */
 
-
-///< Here goes nothing. I knew this one would be tricky :D
 #include "common.h"
-#include "config.h"
 #include "HAL/HAL.h"
 #include "BDM.h"
 
@@ -201,13 +198,11 @@ inline void ShiftData(uint16_t package){
 	Attn = PIND & _BV(0) ? 1: 0;
 	
 	disenablespi(1);
-	
-//	bdmresp = (SendRecSPI( package>>8&0xff) <<8  | SendRecSPI(package&0xFF)&0xff);
+
 	bdmresp = (SendRecSPI2( package>>8&0xFF )) <<8;
 	bdmresp+= (SendRecSPI2(package&0xFF));
 	
 	disenablespi(0);
-
 
 }
 
@@ -218,18 +213,14 @@ inline void Exec_WriteCMD_workaround(uint16_t AddrH, uint16_t AddrL, uint16_t cm
 
 	ShiftData(cmd);
 	
-	//if(AddrH || AddrL){
-		ShiftData(AddrH);
-		ShiftData(AddrL);
-	//}
-	///< Bit 7 set; Send two payloads
+	ShiftData(AddrH);
+	ShiftData(AddrL);
+
 	if(cmd&0x80)
 		ShiftData(DataH);
 	ShiftData(DataL);
 
-	///< Fault checks, what is that? Time will tell if there is enough space left. Not gonna touch it yet..
-	
-//	ShiftWait();
+
 	do{ ShiftData(0);
 	}while(Attn);
 

@@ -20,7 +20,7 @@
 /   866   Russian
 /   869   Greek 2
 */
-#include "../../config.h"
+#include "../../common.h"
 #ifndef AVR
 
 #include "ff.h"

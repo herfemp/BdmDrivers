@@ -8,7 +8,6 @@ Version:   1.11
 #include "hd44780.h"
 //#include "avr\sfr_defs.h"
 #include "../HAL.h"
-#include "../../Config.h"
 #include "../../common.h"
 
 

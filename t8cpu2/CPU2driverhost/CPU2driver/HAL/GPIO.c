@@ -6,7 +6,7 @@
  */ 
 
 #include "GPIO.h"
-#include "../Config.h"
+#include "../common.h"
 
 
 #ifdef AVR
@@ -44,11 +44,7 @@ uint8_t ReadPin(uint8_t port, uint8_t pin){
 
 
 void WritePin(uint8_t port, uint8_t pin, uint8_t value){
-	
 
-	///< Would much, MUCH, rather do it this way but it wastes ram :/
-	//if(value) *pinports[port-1] |= (1<<pin);
-	//else		*pinports[port-1] &=~(1<<pin);
 	if(value){
 		/***/if (port==1) PORTB |= (1<<pin);
 		else if (port==2) PORTC |= (1<<pin);
@@ -163,14 +159,6 @@ void WritePin(uint8_t port, uint8_t pin, uint8_t value){
 	else	 SETBIT(((GPIO_TypeDef *) (GPIO_BADDR + (port*GPIO_ADDRJMP)))->FIOCLR,  (1<<pin));
 #endif
 
-}
-
-
-////////////////////////////////////////////
-//Writes to one or several pins			 //
-void WritePort(uint32_t portNum, uint32_t bitValue, uint32_t bort){
-//TODO -Implement
-//TODO -Implement
 }
 
 

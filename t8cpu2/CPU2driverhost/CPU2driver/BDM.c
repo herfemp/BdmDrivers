@@ -1,12 +1,8 @@
 #include "common.h"
-#include "config.h"
 #include "HAL/HAL.h"
 #include "BDM.h"
 #include <avr/io.h>
-
-
-
- #include "HAL/hd44780/hd44780.h"
+#include "HAL/hd44780/hd44780.h"
 
 
 
@@ -19,7 +15,6 @@
 #include <avr/io.h>
 #include "BDM.h"
 #include "common.h"
-#include "config.h"
 #include "HAL/HAL.h"
 
 
@@ -48,30 +43,6 @@ uint16_t ClockSet=(
 ///7 CPU
 uint8_t DFC = 0x05;
 uint8_t SFC = 0x05;
-
-
-
-
-
-
-
-
-
-void showval(uint16_t val){
-
-		ADDR_LCD[0]=halfbytetoascii(0);
-		ADDR_LCD[1]=halfbytetoascii(val>>12&0xF);
-		ADDR_LCD[2]=halfbytetoascii(val>>8&0xF);
-		ADDR_LCD[3]=halfbytetoascii(val>>4&0xF);
-		ADDR_LCD[4]=halfbytetoascii(val&0xF);
-		lcd_goto(5);
-		lcd_puts(ADDR_LCD,5);
-		 
-
-}
-
-
-
 
 
 
@@ -119,7 +90,7 @@ void PrepT(){
 			lcd_puts("MCP", 0);
 		}
 		
-		showval(bdmresp);
+		// ShowAddr(0, bdmresp);
 		Exec_WriteCMD(0xFF, 0xFA04, WRITE16_BDM,   0, ClockSet);
 
 	}
@@ -144,7 +115,5 @@ void PrepT(){
  
 	 
 	Exec_WriteCMD(0xFF, 0xFA21, WRITE8_BDM , 0, 0);		///< Kill watchdog
-
-
 
 }

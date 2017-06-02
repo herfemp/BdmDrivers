@@ -9,7 +9,7 @@ Version:   1.11
 
 #include "hd44780_settings.h"
 #include "inttypes.h"
-#include "../../Config.h"
+#include "../../common.h"
 
 //LCD Constants for HD44780
 #define LCD_CLR                 0    // DB0: clear display

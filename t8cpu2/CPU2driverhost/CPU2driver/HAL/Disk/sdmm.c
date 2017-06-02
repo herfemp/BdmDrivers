@@ -31,7 +31,7 @@
 #include <stdint.h>
 #include "diskio.h"		/* Common include file for FatFs and disk I/O layer */
 #include "../HAL.h"
-#include "../../config.h"
+#include "../../common.h"
 ///< Modified this code to _not_ use POS bitbanging. It's still slow but a lot faster than before. :)
 
 

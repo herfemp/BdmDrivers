@@ -6,7 +6,7 @@
  */ 
 
 
-#include "../Config.h"
+#include "../common.h"
 
 
 #ifndef IRQ_H_

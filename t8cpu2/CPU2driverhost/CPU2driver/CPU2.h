@@ -5,7 +5,7 @@ uint16_t loaderbytes = sizeof(driver_bin);
 
 #define LDRAddrH 0x0008/* Where in ram to upload the driver    */
 #define LDRAddrL 0x1C00
-#define BUFAddrH 0x0008 /* Where to store address to write and data to written */
+#define BUFAddrH 0x0008 /* Where to store address to write and data to be written */
 #define BUFAddrL 0x0000
 
 #define BufLen	1024

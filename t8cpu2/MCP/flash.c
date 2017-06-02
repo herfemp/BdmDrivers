@@ -123,12 +123,11 @@ uint8_t Writesec(uint32_t Addr){
 /* Todo: Remove that rwbuffer. Flash has its own, use that */
 void WriteBuffer(){
 
+	uint32_t Address  = *(uint32_t *)(RamBuf);
+	uint32_t Buffpntr = RamBuf + 4;
+	uint32_t Len      = RamBufLen;
 	uint8_t  success  = 1;
 	uint8_t  i;
-	
-	uint32_t Address = *(uint32_t *)(RamBuf);
-	uint32_t Buffpntr = RamBuf + 4;
-	uint32_t Len = RamBufLen;
 	
 	/* Regular access */
 	if(Address < 0x40000){

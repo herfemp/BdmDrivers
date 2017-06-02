@@ -8,7 +8,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include "../config.h"
+#include "../common.h"
 
 #ifdef AVR
 #include <avr/io.h>
