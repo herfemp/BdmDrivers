@@ -18,17 +18,13 @@
 
 uint8_t BDM_DEL = 10;
 
-
-
 void InitBDMpins(){
-
 
 	UBRR0H = 0;
 	UBRR0L = 15; /* This should be set after activating usart spi.. meh. who cares. it works */
 
 	UCSR0C = 0;
 	UCSR0B = 0;
-
 
 	SetPinDir(P_RST, 0); ///< Set all of them to floating inputs
 	SetPinDir(P_BKPT,0);
@@ -51,8 +47,8 @@ uint8_t ResetTarget(){
 
 	SetPinDir(P_RST, 0);
 	///< Give it up to 500~ ms to wake up
-	SleepTMR=500;
-	while(!ReadPin(P_RST) && SleepTMR)	;
+	MiscTime=500;
+	while(!ReadPin(P_RST) && MiscTime)	;
 
 	sleep(10);
 	// SetPinDir(P_RST, 0);
@@ -72,11 +68,9 @@ uint8_t StopTarget(){
 	WritePin(P_BKPT,1);
 	WritePin(P_BKPT,0);
 
-
-
 	///< Give it up to 500~ ms to hit the brakes..
-	SleepTMR=500;
-	while(!ReadPin(P_FRZ) &&  SleepTMR)	;
+	MiscTime=500;
+	while(!ReadPin(P_FRZ) &&  MiscTime)	;
 
 	///< It appears someone is stubborn..  STOP!
 	if(!ReadPin(P_FRZ)){
@@ -84,11 +78,10 @@ uint8_t StopTarget(){
 		sleep(100);
 		WritePin(P_RST,1);
 
-		SleepTMR=500;
-		while(!ReadPin(P_FRZ) &&  SleepTMR)	;
+		MiscTime=500;
+		while(!ReadPin(P_FRZ) &&  MiscTime)	;
 	}
 	sleep(10);
-	//SetPinDir(P_RST, 0);
 	return ReadPin(P_FRZ);
 }
 
@@ -97,8 +90,6 @@ uint8_t StopTarget(){
 void ShiftData_s(uint16_t package){
 
 	uint8_t i;
-
-
 
 	Attn=0;
 	for (i=17; i>0; i--){
@@ -141,8 +132,6 @@ void Exec_WriteCMD_s(uint16_t AddrH, uint16_t AddrL, uint16_t cmd, uint16_t Data
 
 
 /* Hardware-assisted functions */ 
-
-
 void disenablespi(uint8_t onoff){
 
 	if(onoff){
@@ -156,13 +145,9 @@ void disenablespi(uint8_t onoff){
 
 uint8_t SendRecSPI2(uint8_t dt){
 
-	while( !( UCSR0A & (1<<UDRE0)) )
-		;
-	
+	while(!(UCSR0A&(1<<UDRE0)))	;
 	UDR0 = dt;
-	
-	while( !( UCSR0A & (1<<RXC0)) )
-		;
+	while(!(UCSR0A&(1<<RXC0)))	;
 	
 	return UDR0&0xff;
 }
@@ -172,22 +157,16 @@ inline void ShiftWait(){
 	
 
 	do{	PORTD &=~(1<<4 | 1<<1);				// Pull down Clock and Data out
-
 		disenablespi(1);					// Enable SPI
-
 		if(!(PIND & _BV(0) ? 1: 0)) break;	// Attention-bit not set, abort loop and fetch our valuable data.
-
 		SendRecSPI2(0);						// Clock out garbage
 		SendRecSPI2(0);
-
 		disenablespi(0);					// kill SPI
-
 	}while (1);
 
-	
 	bdmresp = SendRecSPI2(0) <<8;
 	bdmresp+= SendRecSPI2(0);
-	disenablespi(0);								// kill SPI
+	disenablespi(0); // kill SPI
 	
 }
 
@@ -260,18 +239,48 @@ inline void Exec_DumpCMD(){
 }
 
 
-inline void Exec_FillCMD(uint16_t DataH, uint16_t DataL){
+// Very weird functions for fill32..
+// This one sends bytes in the wrong order
+void SendRecSPInoresp(uint16_t dt){
+
+	while(!(UCSR0A&(1<<UDRE0)))	;
+	UDR0 = dt&0xFF;
+	while(!(UCSR0A&(1<<RXC0)))	;
+	uint8_t temp = UDR0; // This register must be read..
+
+	while(!( UCSR0A&(1<<UDRE0)))	;
+	UDR0 = (dt>>8)&0xFF;
+	while(!( UCSR0A&(1<<RXC0)))	;
+	temp = UDR0; // This register must be read..
+
+	temp = temp; // Aaaand kill that annoying warning!
+}
+inline void ShiftData_p(const uint16_t *package){
+
+	PORTD &=~(1<<4 | 1<<1);
+	UCSR0C = (1<<UMSEL01)|(1<<UMSEL00)|(1<<UCPHA0)|(1<<UCPOL0);
+	UCSR0B = (1<<RXEN0)|(1<<TXEN0);
+	SendRecSPInoresp(*package);
+	UCSR0C = 0;
+	UCSR0B = 0;
+}
+// Store four bytes and let the ECU do the address-counting. Do not fetch response.
+inline void Exec_FillCMD_p(const uint16_t *data){
 
 	ShiftData(FILL32_BDM);
+	ShiftData_p(&data[0]);
+	ShiftData_p(&data[1]);
 	
-	ShiftData(DataH);
-	ShiftData(DataL);
-
-	ShiftWait();
+	uint8_t done = 0;
+	do{	PORTD &=~(1<<4 | 1<<1);               // Pull down Clock and Data out
+		UCSR0C = (1<<UMSEL01)|(1<<UMSEL00)|(1<<UCPHA0)|(1<<UCPOL0);
+		UCSR0B = (1<<RXEN0)|(1<<TXEN0);                      // Enable SPI
+		if(!(PIND & _BV(0) ? 1: 0)) done = 1; // Attention-bit not set, abort loop and fetch our valuable data.
+		SendRecSPInoresp(0);                  // Clock out garbage
+		UCSR0C = 0;
+		UCSR0B = 0;                    // kill SPI
+	}while (!done);
 }
-
-
-
 
 ///<
 inline void Exec_WriteCMD(uint16_t AddrH, uint16_t AddrL, uint16_t cmd, uint16_t DataH, uint16_t DataL){
@@ -288,7 +297,6 @@ inline void Exec_WriteCMD(uint16_t AddrH, uint16_t AddrL, uint16_t cmd, uint16_t
 		ShiftData(DataH);
 	ShiftData(DataL);
 
-	///< Fault checks, what is that? Time will tell if there is enough space left. Not gonna touch it yet..
 	do{ ShiftData(0);
 	}while(Attn);
 

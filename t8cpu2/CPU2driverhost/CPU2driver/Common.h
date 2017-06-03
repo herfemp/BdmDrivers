@@ -15,10 +15,8 @@ uint16_t bdmresp32;
 
 extern char ADDR_LCD[];
 
-volatile uint16_t SleepTMR;
-volatile uint16_t LCDTMR;
-volatile uint16_t BenchTmr;
-volatile uint16_t Menutmr;
+volatile uint16_t BenchTime;
+volatile uint16_t MiscTime;
 
 uint8_t FlashMCP();
 void InitBDMpins();
@@ -35,6 +33,7 @@ void Exec_ReadCMD_workaround( uint16_t AddrH, uint16_t AddrL, uint16_t cmd);
 void Exec_WriteCMD_workaround(uint16_t AddrH, uint16_t AddrL, uint16_t cmd, uint16_t DataH, uint16_t DataL);
 void Exec_ReadCMD_s( uint16_t AddrH, uint16_t AddrL, uint16_t cmd);
 void Exec_WriteCMD_s(uint16_t AddrH, uint16_t AddrL, uint16_t cmd, uint16_t DataH, uint16_t DataL);
+void Exec_FillCMD_p(const uint16_t *data);
 
 void PrepT();
 void ShiftData_s(uint16_t package);
@@ -42,7 +41,7 @@ void ShowAddr(uint8_t Had, uint16_t Lad);
 void timer_IRQ_init(void);
 void sleep(uint16_t time);
 void bootstrapmcp();
-uint8_t halfbytetoascii(uint8_t ch);
+uint8_t nibbletetoascii(uint8_t ch);
 
 
 #define DSPLINES  2

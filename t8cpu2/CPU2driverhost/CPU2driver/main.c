@@ -11,7 +11,7 @@
 #include <avr/interrupt.h>
 
 #define TIMER_TOP 63
-uint8_t printnumber[5];
+char printnumber[5];
 
  ///< Convert binary numbers into ascii chars.
  void something(uint16_t input){
@@ -21,15 +21,12 @@ uint8_t printnumber[5];
 	
 	printnumber[3] = input%10;
 	input = input/10;
-
 	printnumber[2] = input%10;
 	input = input/10;
-
 	printnumber[1] = input%10;
 	input = input/10;
 
 	printnumber[0] = input%10;
-
 	printnumber[0] = printnumber[0] | 0x30;
 	printnumber[1] = printnumber[1] | 0x30;
 	printnumber[2] = printnumber[2] | 0x30;
@@ -46,9 +43,6 @@ void showval_(uint16_t val){
 	lcd_goto(0x45);
 	lcd_puts(printnumber,5);
 }
-
-
-
 
 int main(void){
 
@@ -68,7 +62,6 @@ int main(void){
 
 	SetPinDir(MCP2515_CS_1, 1);
 	WritePin(MCP2515_CS_1, 1);
-
 	SetPinDir(1, 5, 1);
 	SetPinDir(1, 3, 1);
 	SetPinDir(1, 4, 0);
@@ -85,25 +78,12 @@ int main(void){
 	showval_(benchtime);
 
 	while (1){
-		if (!(PINC & _BV(PB4))){
-
-
-			if (ResetTarget() && StopTarget()){
+		if (!(PINC & _BV(PB4)) && ResetTarget() && StopTarget()){
 				
 				lcd_clrscr();
 				lcd_puts("Running?", 0);
 				bootstrapmcp();
-				
-			}
-		}
-	
-
-
-
-
-
-
-	}
+	}}
 	return 0;
 }
 
@@ -117,16 +97,13 @@ void timer_IRQ_init(void) {
 }
 
 void sleep(uint16_t time){
-	SleepTMR=time;
-	do{}while(SleepTMR>0);
+
+	MiscTime=time;
+	do{}while(MiscTime);
 }
-
-
 
 ISR(TIMER0_COMPA_vect){
 
-		if (SleepTMR)SleepTMR--;
-		if (LCDTMR)LCDTMR--;
-		if (BenchTmr)BenchTmr--;
-		if (Menutmr)Menutmr-- ;
+		if (BenchTime) BenchTime--;
+		if (MiscTime)  MiscTime--;
 }
