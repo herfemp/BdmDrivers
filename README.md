@@ -19,3 +19,5 @@ There is no need for you to bother with shadow-switching. just put shadow region
 and start writing from 0 to 0x400FF
 
 The loader is aware of that shadow is smaller than the buffer and will only write 256 bytes in the last transfer
+
+Stay tuned.. I named it driverS for a reason :)
