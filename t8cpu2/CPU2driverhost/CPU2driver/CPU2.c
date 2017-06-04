@@ -55,6 +55,7 @@ uint8_t UploadDRV(){
 		Location+=4;
 	}while(Location<loaderbytes);
 
+	// This is useless atm..
 	return Location >= loaderbytes ? 1:0;
 }
 
@@ -93,7 +94,7 @@ uint8_t LDRDemand(uint8_t Command){
 	return bdmresp16&0xFF;
 }
 
-
+// Write flash data
 uint8_t LDRWrite(){
 
 	uint16_t Had = 0;
@@ -111,7 +112,7 @@ uint8_t LDRWrite(){
 		///< Store command in D0
 		Exec_WriteCMD_s(0, 0, W_DREG_BDM, 0, 1);
 
-		do{ Exec_WriteCMD(BUFAddrH, BUFAddrL, WRITE32_BDM, Had, Lad);// Store address in first buffer location
+		do{ Exec_WriteCMD(BUFAddrH, BUFAddrL, WRITE32_BDM, Had, Lad); // Store address in first buffer location
 			
 			for(i=0; i<Len; i++){
 
@@ -127,26 +128,24 @@ uint8_t LDRWrite(){
 			MiscTime = 2;
 			Latch    = 0;
 
-			do{ if(!Latch){ // We have some free time, calculate crap
+			do{ if(!Latch){                // We have some free time, calculate crap
 					while(ReadPin(P_FRZ))	;
 
 					Lad += 1024;
-					if(!Lad)     Had ++;
+					if(!Lad)     Had ++;   // Increment The high counter when the low one has overflowed to 0
 					if(Had == 4) Len = 64; // Shadow-region; decrease size
-
 					Latch = 1;
 				}
+
 				if(ReadPin(P_RST) && !ReadPin(P_FRZ)) MiscTime=2;
 			}while (MiscTime);
 	
 			///< Read D0
 			Exec_ReadCMD(0, 0, R_DREG_BDM);
+
 			// Check for errors
-			if(bdmresp16 != 1)
-				return 0;
-					
-			if(Had == 4 && Lad > 256)
-				return 1;
+			if(bdmresp16 != 1)          return 0;
+			if(Had == 4 && Lad > 256)   return 1;
 			
 		}while(1);
 	}
