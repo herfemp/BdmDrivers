@@ -6,9 +6,7 @@ cpu2.c/h contains everything you need to understand how the driver works. The re
 It resides @0x81C0 so the sram has to be configured to start @ 0x8000 (Default)
 
 It supports three commands that you have to store in D0 before starting the loader:
-3. -Set up hardware for the host
-2. -Format flash.
-1. -Write flash
+3. Set up hardware for the host, 2. Format flash, 1. Write flash.
 
 In return it will either store 1 if the task was successful or 0 if something failed in D0 before it enters bdm again.
 
