@@ -21,3 +21,17 @@ and start writing from 0 to 0x400FF
 The loader is aware of that shadow is smaller than the buffer and will only write 256 bytes in the last transfer
 
 Stay tuned.. I named it driverS for a reason :)
+
+Status of T5/7/8 loader (currently named t5)
+Missing dq5 status so it WILL get stuck if the flash craps out.
+SPI @ 4 / MCU @ 16,67 MHz / Host @ 16 MHz.
+T5 times:
+TN28F010    : 10483ms
+CAT28f010   : 10104ms (box 1)
+CAT28f010   : 10191ms (box 2)
+39sf020  0-4:  5628ms 
+39sf020  0-8: 10604ms
+T7 times:
+29F400      : 11980ms
+Got these time by filling the whole flash with 00's, the host(weak AVR) can't keep up when reading files.
+
