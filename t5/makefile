@@ -26,9 +26,9 @@ all:  out/startup.o out/T5Driver.bin
 out/startup.o: startup.s
 	$(AS) $(ASFLAGS)  $< -o $@
 
-out/flash.o:   flash.c
-	$(CC) $(CFLAGS) -Wall -ansi $< -c -o $@ 
-
+out/flash.o: flash.s
+	$(AS) $(ASFLAGS)  $< -o $@
+	
 out/T5Driver.bin:    out/flash.o
 	$(CC) $(LDFLAGS) -o $@ out/flash.o
 
