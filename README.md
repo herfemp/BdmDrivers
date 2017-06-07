@@ -33,5 +33,5 @@ CAT28f010   : 10191ms (box 2)
 39sf020  0-8: 10604ms
 T7 times:
 29F400      : 11980ms
-Got these time by filling the whole flash with 00's, the host(weak AVR) can't keep up when reading files.
+Got these times by filling the whole flash with 00's; the host can't keep up when reading files.
 
