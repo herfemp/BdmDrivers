@@ -1,48 +1,9 @@
-#include "common.h"
-#include "HAL/HAL.h"
-
-#include "BDM.h"
-#include "HAL/hd44780/hd44780.h"
-#include "HAL/Disk/ff.h"
+#include "../../common.h"
+#include "../../BDM/BDM.h"
+#include "../../BDM/regdef.h"
 #include "CPU2.h"
 
-
-
-
-// Stupid function
-void clrprintlcd(const char *s){
-
-	lcd_clrscr();
-	lcd_puts(s, 0);
-}
-
-uint8_t nibbletetoascii(uint8_t ch){
-
-	if((ch&0xF)>=0x0&&(ch&0xF)<=0x09) return ((ch&0xF)+0x30);
-	else                              return ((ch&0xF)+0x37);
-}
-
-void ShowAddr(uint8_t Had, uint16_t Lad){
-
-	char ADDR_LCD[5];
-	ADDR_LCD[0]=nibbletetoascii(Had);
-	ADDR_LCD[1]=nibbletetoascii(Lad>>12&0xF);
-	ADDR_LCD[2]=nibbletetoascii(Lad>>8&0xF);
-	ADDR_LCD[3]=nibbletetoascii(Lad>>4&0xF);
-	ADDR_LCD[4]=nibbletetoascii(Lad&0xF);
-	lcd_goto(5);
-	lcd_puts(ADDR_LCD,5);
-}
-
-
-void initsram_mcp(){
-	
-	Exec_WriteCMD(0xFF, 0xfb04, WRITE16_BDM,   0, 8); 
-	Exec_WriteCMD(0xFF, 0xfb06, WRITE16_BDM,   0, 0);
-	Exec_WriteCMD(0xFF, 0xfb00, WRITE16_BDM,   0, 0x800);
-}
-
-
+/*
 uint8_t UploadDRV(){
 
 	uint16_t Location = 0;
@@ -53,49 +14,17 @@ uint8_t UploadDRV(){
 		buf[1] = pgm_read_word(&driver_bin[Location+2]);
 		Exec_FillCMD_p(&buf[0]); // This one will byteswap automatically
 		Location+=4;
-	}while(Location<loaderbytes);
+	}while(Location<mcploaderbytes);
 
 	// This is useless atm..
-	return Location >= loaderbytes ? 1:0;
+	return Location >= mcploaderbytes ? 1:0;
 }
+*/
 
 
-/* Commands:
- * 3: Init hardware
- * 2: Format flash
- * 1: Write data
- *
- * Stores result in D0
- * 1: OK
- * 0: Fail*/
-uint8_t LDRDemand(uint8_t Command){
-
-	///< _MUST_ be here.
-	SetPinDir(P_RST, 0);
-
-	///< Store command in D0
-	Exec_WriteCMD(0, 0, W_DREG_BDM, 0, Command);
-
-	// Set PC to start of driver
-	Exec_WriteCMD(0, 0, W_SREG_BDM, LDRAddrH, LDRAddrL);
-	Exec_WriteCMD(0, 0, 0, 0, 0);
-	ShiftData_s(BDM_GO);
-
-	while(ReadPin(P_FRZ) )
-		;
-			
-	MiscTime=6;
-	do{ if(ReadPin(P_RST) && !ReadPin(P_FRZ)) MiscTime=6;
-	}while (MiscTime);
-		
-	///< Read D0
-	Exec_ReadCMD(0, 0, R_DREG_BDM);
-
-	return bdmresp16&0xFF;
-}
-
+/*
 // Write flash data
-uint8_t LDRWrite(){
+uint8_t LDRWriteMCP(){
 
 	uint16_t Had = 0;
 	uint16_t Lad = 0;
@@ -159,11 +88,10 @@ uint8_t FlashMCP(){
 		
 		PrepT();
 		
-		if(cpu2_testseq){
+		if(Systype == 4){
 		
 			clrprintlcd("Prep..");
 			BenchTime=65535;
-			initsram_mcp();
 		
 			if(!UploadDRV())
 				return 0;
@@ -188,7 +116,7 @@ uint8_t FlashMCP(){
 	return 0;
 }
 
-
+*/
 void bootstrapmcp(){
 
 	PrepT();

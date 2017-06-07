@@ -1,4 +1,4 @@
-#include "inc/common.h"
+#include "common.h"
  
 
  /* * * * * * * * * * * * * * * */

@@ -4,15 +4,12 @@ CC      = m68k-elf-gcc
 CXX     = m68k-elf-g++
 AS      = m68k-elf-as
 
-
-CPU_VARIANT=mcpu32
-LINKER_SCRIPT=mc68f375.ld
-
+CPU_VARIANT   = mcpu32
+LINKER_SCRIPT = mc68f375.ld
 
 ASFLAGS = -mcpu32 # --register-prefix-optional
 CFLAGS  = -mcpu32  -O1 $(NEW_INSTRUCTIONS) -fomit-frame-pointer
 LDFLAGS = -mcpu32 -nostdlib -Wl,-s -Wl,-n -T$(LINKER_SCRIPT) -Wl,-Map=$(basename $@).map
-
 
 ifeq ($(OS),Windows_NT)
    RM = del /Q
@@ -24,9 +21,7 @@ else
    endif
 endif
 
-
 all:  out/startup.o out/driver.bin 
-
 
 out/startup.o: startup.s
 	$(AS) $(ASFLAGS)  $< -o $@

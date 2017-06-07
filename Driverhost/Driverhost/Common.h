@@ -1,22 +1,36 @@
+#include <stdlib.h>
 #include <stdio.h>
-#include <stdint.h>
 #include <string.h>
+#include <avr/io.h>
+#include <avr/pgmspace.h>
+#include <avr/interrupt.h>
+#include "HAL/HAL.h"
 #include "HAL/Disk/ff.h"
+#include "HAL/hd44780/hd44780.h"
 
-uint16_t benchtime;
+// 4: Trionic 8, CPU2 (MCP)
+// 3: Trionic 8, CPU1 (Main)
+// 2: Trionic 7
+// 1: Trionic 5
+// 0: Unknown, FAIL!
+uint8_t Systype;
+
 UINT bw;
 FATFS FatFs;
 FIL Fil;
 
-uint8_t Attn;
+uint8_t  Attn;
 uint16_t bdmresp;
 uint16_t bdmresp16;
 uint16_t bdmresp32;
 
-extern char ADDR_LCD[];
-
+char printnumber[5];
+uint8_t LDRDemand(uint8_t Command, const uint16_t *Addr);
+uint8_t Flash(const uint16_t *Bufst, const uint16_t *DrvStart);
 volatile uint16_t BenchTime;
 volatile uint16_t MiscTime;
+uint8_t UploadDRV();
+uint8_t LDRWrite(const uint16_t *Bufstart, const uint16_t *LDRAddr);
 
 uint8_t FlashMCP();
 void InitBDMpins();
@@ -41,10 +55,11 @@ void ShowAddr(uint8_t Had, uint16_t Lad);
 void timer_IRQ_init(void);
 void sleep(uint16_t time);
 void bootstrapmcp();
+
 uint8_t nibbletetoascii(uint8_t ch);
-
-
-#define DSPLINES  2
+void clrprintlcd(const char *s);
+void ShowAddr(uint8_t Had, uint16_t Lad);
+void showval(uint16_t val);
 
 
 #define P_RST  3, 2
@@ -53,29 +68,26 @@ uint8_t nibbletetoascii(uint8_t ch);
 #define P_DSI  3, 1
 #define P_DSO  3, 0
 
-
 #define F_CPU 16000000UL
 
-#define SDCARD_CS_PORT          1
-#define SDCARD_CS_PIN           0
+#define SDCARD_CS_PORT 1
+#define SDCARD_CS_PIN  0
 
+#define	MCP2515_CS_1   1,2
+#define	MCP2515_INT_1  B,1
 
+#define DSPLINES       2
 
-#define	MCP2515_CS_1			1,2
-#define	MCP2515_INT_1			B,1
+#define LCD_DB4_PORT   2
+#define LCD_DB5_PORT   2
+#define LCD_DB6_PORT   2
+#define LCD_DB7_PORT   2
+#define LCD_DB4_PIN    0
+#define LCD_DB5_PIN    1
+#define LCD_DB6_PIN    2
+#define LCD_DB7_PIN    3
 
-
-
-#define LCD_DB4_PORT            2
-#define LCD_DB5_PORT            2
-#define LCD_DB6_PORT            2
-#define LCD_DB7_PORT            2
-#define LCD_DB4_PIN             0
-#define LCD_DB5_PIN             1
-#define LCD_DB6_PIN             2
-#define LCD_DB7_PIN             3
-
-#define LCD_E_PORT              2
-#define LCD_RS_PORT             3
-#define LCD_E_PIN               5
-#define LCD_RS_PIN              3
+#define LCD_E_PORT     2
+#define LCD_RS_PORT    3
+#define LCD_E_PIN      5
+#define LCD_RS_PIN     3

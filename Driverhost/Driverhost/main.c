@@ -1,0 +1,96 @@
+#include "Common.h"
+
+#define TIMER_TOP 62
+
+int main(void){
+
+	timer_IRQ_init();
+	EnableGlobalInt(); 
+	InitBDMpins();
+
+	lcd_init();
+	lcd_clrscr();
+	lcd_puts("Hello", 0);
+
+	f_mount(&FatFs, "", 0);
+
+	// Crank SPI to eleven
+	SPCR = (1<<SPE)|(1<<MSTR) | 0;
+	SPSR = (1<<SPI2X);
+
+	SetPinDir(MCP2515_CS_1, 1);
+	WritePin(MCP2515_CS_1, 1);
+	SetPinDir(1, 5, 1);
+	SetPinDir(1, 3, 1);
+	SetPinDir(1, 4, 0);
+
+	uint16_t Bufst[2];
+	uint16_t Driv[2];
+	Bufst[0] = 0xF;
+	Bufst[1] = 0xFFFC;
+	Driv[0]  = 0x10;
+	Driv[1]  = 0x400;
+
+	Systype = 0;
+	if (ResetTarget() && StopTarget())
+		PrepT();
+	/*if(Systype == 1){
+		if(f_open( &Fil, "t5.bin", FA_OPEN_EXISTING | FA_READ ) == FR_OK){
+			if(!Flash(&Bufst[0], &Driv[0])){
+				lcd_puts("fail", 0);
+				ShowAddr(1, bdmresp16);
+				while(1){};
+			}
+		}
+	}
+	else */if(Systype == 2){
+		if(f_open( &Fil, "t7.bin", FA_OPEN_EXISTING | FA_READ ) == FR_OK){
+			if(!Flash(&Bufst[0], &Driv[0])){
+				lcd_puts("fail", 0);
+				ShowAddr(1, bdmresp16);
+				while(1){};
+			}
+		}
+	}
+	/*
+	if(!FlashMCP()){
+		lcd_clrscr();
+		lcd_puts("FAIL!", 0);
+		while(1){}
+	}*/
+
+	while(1){};
+	DDRC &= ~_BV(DDC4);
+	PORTC = (1 << 4);
+
+	
+
+	while (1){
+		if (!(PINC & _BV(PB4)) && ResetTarget() && StopTarget()){
+				
+				lcd_clrscr();
+				lcd_puts("Running?", 0);
+				bootstrapmcp();
+	}}
+	return 0;
+}
+
+void timer_IRQ_init(void) {
+
+	TCCR0A     = (1<<WGM01);
+	TCCR0B     = (1<<CS02)|(0<<CS01)|(0<<CS00); ///< Fosc/256
+	OCR0A      = TIMER_TOP;  
+	TIMSK0	   = (1<<OCIE0A);
+}
+
+void sleep(uint16_t time){
+
+	MiscTime = time;
+	do{}while(MiscTime);
+}
+
+ISR(TIMER0_COMPA_vect){
+
+		if (BenchTime) BenchTime--;
+		if (MiscTime)  MiscTime--;
+}

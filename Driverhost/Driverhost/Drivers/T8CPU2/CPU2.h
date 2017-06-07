@@ -1,7 +1,7 @@
 
-#include "avr/pgmspace.h"
+#include "../../common.h"
 #include "driver.bin.h"
-uint16_t loaderbytes = sizeof(driver_bin);
+uint16_t mcploaderbytes = sizeof(driver_bin);
 
 #define LDRAddrH 0x0008/* Where in ram to upload the driver    */
 #define LDRAddrL 0x1C00
@@ -12,9 +12,7 @@ uint16_t loaderbytes = sizeof(driver_bin);
 #define LDRSucc 1
 #define LDRFail 0
 
-
- 
- uint16_t CMFIMCR_Enable_shadow = (
+uint16_t CMFIMCR_Enable_shadow = (
 //	0<<15 | // stop
 //	0<<14 | // protect
 	1<<13 | // SIE (Shadow information enable)
