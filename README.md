@@ -34,5 +34,5 @@ CAT28f010   : 10191ms (box 2)
 T7 times:
 29F400      : 11980ms
 T8: Host can not yet initialize hardware as it should.
-Got these times by filling the whole flash with 00's; the host can't keep up when reading files.
+Got these times by filling the whole flash with 00's; This host can't keep up when reading files.
 
