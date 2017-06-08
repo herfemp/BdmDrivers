@@ -126,7 +126,7 @@ uint8_t LDRWrite(const uint16_t *Bufstart, const uint16_t *LDRAddr, uint8_t End)
 	do{ Exec_WriteCMD(Bufstart[0], Bufstart[1], WRITE32_BDM, 0,0); // Ugly solution to start the fill command at the right address..
 
 		
-		for(i=0; i<512; i+=4)
+		for(i=0; i<600; i+=4)
 			Exec_FillCMD_p((uint16_t *)&Fbuf[i]); // This one will byteswap automatically
 
 		for(i=0; i<106; i++){ // In other words this will already be buffered..
