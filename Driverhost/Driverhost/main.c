@@ -21,6 +21,14 @@
 // T7: 13,2~
 // T8: 29,6~
 
+// Even more improved:
+// T5:
+// 39sf020  : (for 0 - 0x40000, ie half of the flash) 5,15 secs
+//  tn28f010: 8,9
+// cat28f010: 8,87
+// T7: 12,62
+// T8: 28,9
+
 int main(void){
 
 	timer_IRQ_init();

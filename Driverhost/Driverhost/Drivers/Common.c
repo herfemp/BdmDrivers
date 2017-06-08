@@ -112,6 +112,8 @@ uint8_t LDRWrite(const uint16_t *Bufstart, const uint16_t *LDRAddr, uint8_t End)
 	uint16_t Lad = 0;
 	uint16_t   i;
 	uint16_t buf[2];
+	uint8_t cntr;
+	uint8_t latch;
 
 	// Prefill buffer
 	f_read(&Fil, &Fbuf, 600, &bw); // Read more than 512 bytes to force ff to read two sectors
@@ -138,9 +140,10 @@ uint8_t LDRWrite(const uint16_t *Bufstart, const uint16_t *LDRAddr, uint8_t End)
 		ShiftData(0);
 		ShiftData_s(BDM_GO);
 
-		i = 0;
-		do{ if(!i){                // We have some free time
-				i = 1;
+		latch = 0;
+		do{ cntr = 0;
+			if(!latch){                // We have some free time
+				latch = 1;
 				// while(ReadPin(P_FRZ))	;
 				Lad     += 1024;
 				if(!Lad) Had ++;   // Increment The high counter when the low one has overflowed to 0	
@@ -151,8 +154,10 @@ uint8_t LDRWrite(const uint16_t *Bufstart, const uint16_t *LDRAddr, uint8_t End)
 				}
 				MiscTime = 2;
 			}
-			if(ReadPin(P_RST) && !ReadPin(P_FRZ)) MiscTime = 2;
-		}while (MiscTime);
+			for(i=0; i<20; i++)
+				if(ReadPin(P_RST) && !ReadPin(P_FRZ)) cntr ++;//MiscTime = 2;
+		
+		}while (/*MiscTime*/cntr);
 
 		///< Read D0 / Check for errors
 		Exec_ReadCMD(0, 0, R_DREG_BDM);
