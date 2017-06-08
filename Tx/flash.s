@@ -27,8 +27,9 @@
  *
  */
  
+ 
 /* This routine is royally stupid! */
-Syscfg:                 
+Syscfg:
        moveq       #0x40, %d1     /* Wait 64~ ms; Also used for H/V on T5 */
        moveq          #0, %d6     /*  */
        moveq          #0, %d7    

@@ -25,14 +25,14 @@ uint16_t bdmresp16;
 uint16_t bdmresp32;
 
 char printnumber[5];
-uint8_t LDRDemand(uint8_t Command, const uint16_t *Addr);
-uint8_t Flash(const uint16_t *Bufst, const uint16_t *DrvStart);
+uint8_t Flash(const uint16_t *Bufst, const uint16_t *DrvStart, uint8_t End);
+uint8_t LDRDemand(uint8_t Command, const uint16_t *Addr, uint8_t End);
+uint8_t FlashMCP();
+
 volatile uint16_t BenchTime;
 volatile uint16_t MiscTime;
-uint8_t UploadDRV();
-uint8_t LDRWrite(const uint16_t *Bufstart, const uint16_t *LDRAddr);
 
-uint8_t FlashMCP();
+
 void InitBDMpins();
 
 uint8_t StopTarget();
@@ -54,7 +54,6 @@ void ShiftData_s(uint16_t package);
 void ShowAddr(uint8_t Had, uint16_t Lad);
 void timer_IRQ_init(void);
 void sleep(uint16_t time);
-void bootstrapmcp();
 
 uint8_t nibbletetoascii(uint8_t ch);
 void clrprintlcd(const char *s);

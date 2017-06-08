@@ -110,16 +110,18 @@ void PrepTrionic82(){
 	 
 	///< Stop SRAM
 	Exec_WriteCMD(0xFF, FASRAM_Base, WRITE16_BDM,   0, 0x8400);
-	 
-	///< Set up addr, "Main" SRAM 8Kbytes, or 32K.. (Stupid Manual.)
-	// Exec_WriteCMD(0xFF, 0xfb04, WRITE16_BDM,   0, RambaseH);
-	Exec_WriteCMD(0xFF, 0xfb04, WRITE16_BDM,   0, 0x1000); // Haven't checked this yet. base sram @0
-	Exec_WriteCMD(0xFF, 0xfb06, WRITE16_BDM,   0, 0);
-	// .. Set up the 512B blocks?
+	
+	///< Stop DPTRAM
+	Exec_WriteCMD(0xFF, DPTMCR_Base, WRITE16_BDM,   0, 0x8000);
+	///< Start DPTRAM
+	Exec_WriteCMD(0xFF, DPTMCR_Base, WRITE16_BDM,   0, 0);
+	Exec_WriteCMD(0xFF, 0xF684, WRITE16_BDM,   0, 0x1000);
+	 	 
+	// Kill watchdog 
+	Exec_WriteCMD(0xFF, 0xFA27, WRITE8_BDM,   0, 0x55);
+	Exec_WriteCMD(0xFF, 0xFA27, WRITE8_BDM,   0, 0xAA);
+	Exec_WriteCMD(0xFF, 0xFA58, WRITE16_BDM,   0, 0);
 
-	///< Start SRAM
-	Exec_WriteCMD(0xFF, FASRAM_Base, WRITE16_BDM,   0, FMCR);
-	 
 
 	///< Stop DPTRAM
 	/*Exec_WriteCMD(0xFF, DPTMCR_Base, WRITE16_BDM,   0, 0x8000);
@@ -151,126 +153,6 @@ void PrepTrionic5(){
 
 }
 
-void PrepTrionic7(){
-
-/*	Exec_WriteCMD(0xFF, 0xFA44, WRITE16_BDM,   0, 0);
-	Exec_WriteCMD(0xFF, 0xFA46, WRITE16_BDM,   0, 0);
-
-	Exec_WriteCMD(0xFF, 0xFA16, WRITE16_BDM,   0, 0); // PEPAR
-	Exec_WriteCMD(0xFF, 0xFA1E, WRITE16_BDM,   0, 0); // PFPAR
-	Exec_WriteCMD(0xFF, 0xFA14, WRITE16_BDM,   0, 0xFFFF); // DDRE
-	Exec_WriteCMD(0xFF, 0xFA1C, WRITE16_BDM,   0, 0xFFFF); // DDRF
-
-	Exec_WriteCMD(0xFF, 0xFC16, WRITE8_BDM,   0, 0); // PQSPAR
-	Exec_WriteCMD(0xFF, 0xFC17, WRITE8_BDM,   0, 0xFF); // DDRQS
-
-	Exec_WriteCMD(0xFF, 0xFC0A, WRITE16_BDM,   0, 0); // SCCR1
-
-
-	// Enable sram? Weird one..
-	Exec_WriteCMD(0xFF, 0xFB40, WRITE16_BDM,   0, 0x8000);
-	// Exec_WriteCMD(0xFF, 0xFB44, WRITE32_BDM,   0xFFFF, 0xD000); //0xFFFF D000
-
-	Exec_WriteCMD(0xFF, 0xFB44, WRITE16_BDM,   0, 0xFFFF); //0xFFFF D000
-	Exec_WriteCMD(0xFF, 0xFB46, WRITE16_BDM,   0, 0xD000); //0xFFFF D000
-	Exec_WriteCMD(0xFF, 0xFB40, WRITE16_BDM,   0, 0);	
-	
-	printf("T7 Test.. \n\r");
-
-	do{ 
-		Exec_WriteCMD(0xFF, 0xFA10, WRITE16_BDM,   0, 0xFFFF); // PE0	
-		Exec_WriteCMD(0xFF, 0xFA12, WRITE16_BDM,   0, 0xFFFF); // PE1
-		Exec_WriteCMD(0xFF, 0xFA18, WRITE16_BDM,   0, 0xFFFF); // PF0
-		Exec_WriteCMD(0xFF, 0xFA1A, WRITE16_BDM,   0, 0xFFFF); // PF1
-		Exec_WriteCMD(0xFF, 0xFC14, WRITE16_BDM,   0, 0xFFFF); // Pq
-
-		Exec_WriteCMD(0xFF, 0xFA41, WRITE8_BDM,   0, 0xFF); // c	
-		sleep(250);
-
-
-		Exec_WriteCMD(0xFF, 0xFA10, WRITE16_BDM,   0, 0); // PE0
-		Exec_WriteCMD(0xFF, 0xFA12, WRITE16_BDM,   0, 0); // PE1
-		Exec_WriteCMD(0xFF, 0xFA18, WRITE16_BDM,   0, 0); // PF0
-		Exec_WriteCMD(0xFF, 0xFA1A, WRITE16_BDM,   0, 0); // PF1
-		Exec_WriteCMD(0xFF, 0xFC14, WRITE16_BDM,   0, 0); // Pq
-
-
-		Exec_WriteCMD(0xFF, 0xFA41, WRITE8_BDM,   0, 0); // c	
-		sleep(250);
-	}while(1);
-
-
-	*/
-
-
-	Exec_WriteCMD(0xFF, 0xFA44, WRITE16_BDM,   0, 0x2FFF); // CSPAR0 (CSPA0[6] Set as 8 bit, all other 16 bit) (Set port c2, 1, 0?)
-	
-	// Enable Addr[19] line.. WHY??
-	Exec_WriteCMD(0xFF, 0xFA46, WRITE16_BDM,   0, 0x0001); // CSPAR1 (CSPA1[0] Alt. function )
-	
-	Exec_WriteCMD(0xFF, 0xFA48, WRITE16_BDM,   0, 0x0006); // CSBARBT
-	Exec_WriteCMD(0xFF, 0xFA4A, WRITE16_BDM,   0, 0x6BB0); // CSORBT
-
-	Exec_WriteCMD(0xFF, 0xFA50, WRITE16_BDM,   0, 0x0006); // CSBAR1
-	Exec_WriteCMD(0xFF, 0xFA52, WRITE16_BDM,   0, 0x1030); // CSOR1 
-
-	// All are set to Supervisor/user space
-	// Base: 0xF0
-	// Mode: Asynchronous
-	// B/S : 64K
-	Exec_WriteCMD(0xFF, 0xFA4C, WRITE16_BDM,   0, 0xF003); // CSBAR0
-	Exec_WriteCMD(0xFF, 0xFA4E, WRITE16_BDM,   0, 0x6830); // CSOR0 // Both bytes (16 bit), R/W Set to 01 Read only
-	Exec_WriteCMD(0xFF, 0xFA58, WRITE16_BDM,   0, 0xF003); // CSBAR3 
-	Exec_WriteCMD(0xFF, 0xFA5A, WRITE16_BDM,   0, 0x5030); // CSOR3 // Upper byte, R/W set to 10 Write only
-	Exec_WriteCMD(0xFF, 0xFA5C, WRITE16_BDM,   0, 0xF003); // CSBAR4 
-	Exec_WriteCMD(0xFF, 0xFA5E, WRITE16_BDM,   0, 0x3030); // CSOR4 // Lower byte, R/W set to 10 Write only
-
-	// Set up Canctrl
-	Exec_WriteCMD(0xFF, 0xFA60, WRITE16_BDM,   0, 0xFF00); // CSBAR5
-	Exec_WriteCMD(0xFF, 0xFA62, WRITE16_BDM,   0, 0x7BF0); // CSOR5
-
-	// Goes to??
-	Exec_WriteCMD(0xFF, 0xFA70, WRITE16_BDM,   0, 0xFFF8); // CSBAR9
-	Exec_WriteCMD(0xFF, 0xFA72, WRITE16_BDM,   0, 0x2BC7); // CSOR9
-
-	Exec_WriteCMD(0xFF, 0xFB04, WRITE16_BDM,   0, 0xFFE8); // 0xFF E800
-	Exec_WriteCMD(0xFF, 0xFB00, WRITE16_BDM,   0, 0); // Enable dptram
-
-	// /Init
-	Exec_WriteCMD(0xFF, 0xFA41, WRITE8_BDM,   0, 0x1F);
-
-	Exec_WriteCMD(0xFF, 0xFA17, WRITE8_BDM,   0, 0x11);
-	Exec_WriteCMD(0xFF, 0xFA13, WRITE8_BDM,   0, 0);
-	Exec_WriteCMD(0xFF, 0xFA15, WRITE8_BDM,   0, 0xFE);
-
-	// PFPAR Pf[3] as Int, others regular io
-	Exec_WriteCMD(0xFF, 0xFA1F, WRITE8_BDM,   0, 0x8);
-	// Pf all pins low
-	Exec_WriteCMD(0xFF, 0xFA1B, WRITE8_BDM,   0, 0);
-
-	// DDRF PortF[0, 2 and 7] as output
-	Exec_WriteCMD(0xFF, 0xFA1D, WRITE8_BDM,   0, 0x85);
-	// /Init
-
-	Exec_ReadCMD(0xFF, 0xFA1B, READ8_BDM);
-	// printf("Andfunc1: %04X\n\r", bdmresp16);
-	bdmresp16 &= 0x20;
-	// printf("Andfunc2: %04X\n\r", bdmresp16);
-	// Software would stop here if result is 0 (It is not, obv)
-
-	Exec_ReadCMD(0xFF, 0xFA1B, READ8_BDM);
-	bdmresp16 |= 5;
-	Exec_WriteCMD(0xFF, 0xFA1B, WRITE8_BDM,   0, 0xFF);
-
-	// Latch up chip enable for SRAM (Wo-motherfawking-whoo!! )
-	Exec_WriteCMD(0xFF, 0xF706, WRITE16_BDM,   0, 0x1000);
-
-
-
-	Exec_WriteCMD(0xFF, 0xFB04, WRITE16_BDM,   0, 0x1000); ///< Link DPTRAM to Addr 0x10000
-
-}
-
 void PrepT(){
 
 	Systype = 0;
@@ -295,7 +177,9 @@ void PrepT(){
 	if(bdmresp == 0xA908){
 		Systype = 3;
 		// Multi, max 7 (x9) (28 Mhz) ///Divider, Max 7, 0 div by 2, 1 4, 2 8...
-		Exec_WriteCMD_s(0xFF, 0xFA08, WRITE16_BDM,   0, ( 5<<12 |  0<<8 ));
+		// Exec_WriteCMD_s(0xFF, 0xFA08, WRITE16_BDM,   0, ( 5<<12 |  0<<8 ));
+		Exec_WriteCMD_s(0xFF, 0xFA08, WRITE16_BDM,   0, 0x6808);
+		
 
 	// If given the wrong response, assume T5, T7 or MCP
 	}else{
@@ -304,30 +188,25 @@ void PrepT(){
 		Exec_ReadCMD_s(0xFF, 0xFA04, READ16_BDM);
 		
 		if(bdmresp == 0x3008){       // Trionic 8 CPU2 (MCP)
-					Systype = 4;
+			Systype = 4;
 			ClockSet = MCPClock;
-		}else if(bdmresp == 0x3F08){ // Trionic 5
-			Systype = 1;
-			ClockSet=0x7F00; // 16,67
-			//ClockSet=0xD300; // 20,9 mhz Overclock.
-		}else{                       // Trionic 7	
-		Systype = 2;
-		// ClockSet = 0x3F0F; // ..
-		// Meh.. crank everything to fawking eleven!
-		ClockSet = (
-		0 << 15 | // W - Frequency Control (VCO)
-		0 << 14 | // X - Frequency Control Bit (Prescale)
-		0 <<  8 | // Y - Frequency Control (Counter)
-		0 <<  7 | // EDIV
-		// y = 63: TBT
-		// Y = 00: 5826 mS
-		// Y = 32: 5826 mS
-		0 <<  2 | // RSTEN
-		1 <<  1 | // STSIM
-		1);       // STEXT
 
+		}else{
+			Exec_ReadCMD_s(0xFF, 0xFA24, READ16_BDM); // Read PITR to get status of MODCLK pin
+			showval(bdmresp16&0x100);
+			sleep(2000);
+			if(bdmresp16&0x100){ // Trionic 7
+				Systype = 2;
+				ClockSet=0x7F00; // 16,67 .. This is wrong but it works
+
+			}else{ // Trionic 5
+				Systype = 1;
+				ClockSet=0x7F00; // 16,67
+				//ClockSet=0xD300; // 20,9 mhz Overclock.
+			}
 		}
-		Exec_WriteCMD_s(0xFF, 0xFA04, WRITE16_BDM,   0, ClockSet);
+		if(ClockSet)
+			Exec_WriteCMD_s(0xFF, 0xFA04, WRITE16_BDM,   0, ClockSet);
 	}
 
 	///< Couldn't get reliable answers by checking the locked-flag. Delay will have to do.
@@ -335,7 +214,7 @@ void PrepT(){
 
 	lcd_clrscr();
 	//showval_(bdmresp16);
-	// sleep(2000);
+	//sleep(2000);
 	if(Systype == 4){       // MCP
 		PrepTrionic82();
 		lcd_puts("MCP", 0);
@@ -343,7 +222,7 @@ void PrepT(){
 		PrepTrionic81();
 		lcd_puts("T8", 0);
 	}else if(Systype == 2){ // T7
-		PrepTrionic7();
+		PrepTrionic5();
 		lcd_puts("T7", 0);
 	}else if(Systype == 1){ // T5
 		PrepTrionic5();
@@ -352,17 +231,17 @@ void PrepT(){
 		lcd_puts("Unk. System!", 0);
 		while(1){};
 	}
-	// while(1){};
+	sleep(1000);
 	//UBRR0 = 0;
 	UBRR0H = 0; // 4 bits
 
-	UBRR0L = 7; // 8 bits
+	// UBRR0L = 3; // 8 bits
 	//UBRR0H = 0;
-	UCSR0A |= (1 << U2X0);
+	// UCSR0A |= (1 << U2X0);
 
 	// Kinda unstable but stupidly fast!
-//	UBRR0L = 1; // 8 bits
-//	UCSR0A |= (1 << U2X0);
+	UBRR0L = 1; // 8 bits
+	UCSR0A |= (1 << U2X0);
 
 
 	if(Systype > 2){
@@ -370,14 +249,7 @@ void PrepT(){
 		UCSR0A |= (1 << U2X0);
 	}
 
-
-/*	UBRR0H = 0;
-	UBRR0L = 0;*/
-	
-
- 
 	if(Systype != 3)
 		Exec_WriteCMD(0xFF, 0xFA21, WRITE8_BDM , 0, 0);		///< Kill watchdog
 
-	// while(1){};
 }

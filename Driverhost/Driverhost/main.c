@@ -2,6 +2,18 @@
 
 #define TIMER_TOP 62
 
+
+// Benchmarks when flashing real data from file instead of 0-fill:
+// T8 main: 38,2 Secs
+// T8 MCP : 17~  Secs
+// T7: 17,1 Secs
+// T5:
+//  tn28f010 : 11,1 Secs. Kid you not ;)
+// sst39sf020:  7,1 Secs (for 0 - 0x40000, ie half of the flash)
+// cat28f010 : 11,3 Secs. Box 1
+// cat28f010 : 11,2 Secs. Box 2
+
+
 int main(void){
 
 	timer_IRQ_init();
@@ -34,44 +46,51 @@ int main(void){
 	Systype = 0;
 	if (ResetTarget() && StopTarget())
 		PrepT();
-	/*if(Systype == 1){
+
+	if(Systype == 1){
+
 		if(f_open( &Fil, "t5.bin", FA_OPEN_EXISTING | FA_READ ) == FR_OK){
-			if(!Flash(&Bufst[0], &Driv[0])){
+			if(!Flash(&Bufst[0], &Driv[0], 4)){
 				lcd_puts("fail", 0);
 				ShowAddr(1, bdmresp16);
 				while(1){};
 			}
 		}
 	}
-	else */if(Systype == 2){
+	else if(Systype == 2){
+
 		if(f_open( &Fil, "t7.bin", FA_OPEN_EXISTING | FA_READ ) == FR_OK){
-			if(!Flash(&Bufst[0], &Driv[0])){
+			if(!Flash(&Bufst[0], &Driv[0], 8)){
 				lcd_puts("fail", 0);
 				ShowAddr(1, bdmresp16);
 				while(1){};
 			}
 		}
+	}else if (Systype == 3){
+
+		if(f_open( &Fil, "t8.bin", FA_OPEN_EXISTING | FA_READ ) == FR_OK){
+			if(!Flash(&Bufst[0], &Driv[0], 0x10)){
+				lcd_puts("fail", 0);
+				ShowAddr(1, bdmresp16);
+				while(1){};
+			}
+		}else
+		lcd_puts("nof", 0);
+	}else if (Systype == 4){
+
+		if(!FlashMCP()){
+			lcd_puts("fail", 0);
+			ShowAddr(1, bdmresp16);
+			while(1){};
+		}
 	}
-	/*
-	if(!FlashMCP()){
-		lcd_clrscr();
-		lcd_puts("FAIL!", 0);
-		while(1){}
-	}*/
+	f_close(&Fil);
+	ResetTarget();
 
-	while(1){};
-	DDRC &= ~_BV(DDC4);
-	PORTC = (1 << 4);
 
-	
+	// lcd_puts("Running?", 0);
+	while (1){};
 
-	while (1){
-		if (!(PINC & _BV(PB4)) && ResetTarget() && StopTarget()){
-				
-				lcd_clrscr();
-				lcd_puts("Running?", 0);
-				bootstrapmcp();
-	}}
 	return 0;
 }
 

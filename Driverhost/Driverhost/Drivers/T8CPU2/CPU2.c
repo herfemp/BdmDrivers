@@ -3,8 +3,8 @@
 #include "../../BDM/regdef.h"
 #include "CPU2.h"
 
-/*
-uint8_t UploadDRV(){
+
+uint8_t UploadDRVMCP(){
 
 	uint16_t Location = 0;
 	uint16_t buf[2];
@@ -19,10 +19,8 @@ uint8_t UploadDRV(){
 	// This is useless atm..
 	return Location >= mcploaderbytes ? 1:0;
 }
-*/
 
 
-/*
 // Write flash data
 uint8_t LDRWriteMCP(){
 
@@ -84,56 +82,28 @@ uint8_t LDRWriteMCP(){
 
 uint8_t FlashMCP(){
 
-	if (ResetTarget() && StopTarget()){
 		
-		PrepT();
+	uint16_t DrvStart[2] = {LDRAddrH, LDRAddrL-4};
+	clrprintlcd("Prep..");
+	BenchTime=65535;
 		
-		if(Systype == 4){
-		
-			clrprintlcd("Prep..");
-			BenchTime=65535;
-		
-			if(!UploadDRV())
-				return 0;
+	if(!UploadDRVMCP())
+		return 0;
 				
-			if(!LDRDemand(3)) // Ask loader to configure everything
-				return 0;
+	if(!LDRDemand(3,&DrvStart[0], 0)) // Ask loader to configure everything
+		return 0;
 				
-			if(!LDRDemand(2)) // Format flash
-				return 0;
+	if(!LDRDemand(2,&DrvStart[0], 0)) // Format flash
+		return 0;
 				
-			clrprintlcd("Writing");
-			if(!LDRWrite())
-				return 0;
+	clrprintlcd("Writing");
+	if(!LDRWriteMCP())
+		return 0;
 			
-			benchtime = 65535 - BenchTime;
-			f_close(&Fil);
-			clrprintlcd("OK");
-			
-			return 1;
-		}
-	}
-	return 0;
+	clrprintlcd("OK");
+	showval(65535 - BenchTime);	
+	return 1;
 }
-
-*/
-void bootstrapmcp(){
-
-	PrepT();
-
-	Exec_WriteCMD(0xFF, CMFIMCRAddr, WRITE16_BDM,   0, CMFIMCR_Stop);
-	Exec_WriteCMD(0xFF, CMFIBAHAddr, WRITE16_BDM,   0, 0);
-	Exec_WriteCMD(0xFF, CMFIBALAddr, WRITE16_BDM,   0, 0);
-	Exec_WriteCMD(0xFF, CMFIMCRAddr, WRITE16_BDM,   0, CMFIMCR_Enable);
-
-	///< Set PC to correct address.
-	Exec_WriteCMD(0, 0, W_SREG_BDM, 0, 0x100);
-	Exec_WriteCMD(0, 0, 0, 0, 0);
-	ShiftData_s(BDM_GO);
-
-	lcd_puts(".", 0);
-}
-
 
 
 
