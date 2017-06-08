@@ -202,7 +202,7 @@ void PrepT(){
 			}else{ // Trionic 5
 				Systype = 1;
 				ClockSet=0x7F00; // 16,67
-				//ClockSet=0xD300; // 20,9 mhz Overclock.
+				// ClockSet=0xD300; // 20,9 mhz Overclock.
 			}
 		}
 		if(ClockSet)

@@ -13,6 +13,13 @@
 // cat28f010 : 11,3 Secs. Box 1
 // cat28f010 : 11,2 Secs. Box 2
 
+// With new write-routine:
+// t5:
+// tn28f010 : 9,3
+//  39sf020 : 5,5 (for 0 - 0x40000, ie half of the flash) -This is getting hilarious! ..Same time @20,1 MHz so this is clearly the host that is limiting.
+// cat28f010: both @ 9,2~ 
+// T7: 13,2~
+// T8: 29,6~
 
 int main(void){
 

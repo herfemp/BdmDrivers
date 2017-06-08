@@ -38,7 +38,7 @@ void InitBDMpins();
 uint8_t StopTarget();
 uint8_t ResetTarget();
 void ShiftData(uint16_t package);
-
+void SPInull();
 void Exec_DumpCMD();
 void Exec_FillCMD(uint16_t DataH, uint16_t DataL);
 void Exec_ReadCMD( uint16_t AddrH, uint16_t AddrL, uint16_t cmd);
