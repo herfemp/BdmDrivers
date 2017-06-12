@@ -170,7 +170,7 @@ OOisOO:
 /*      Format flash         */
        move.w	#1000  , %d0   /* Maximum number of tries */
 FFloop:                     
-       cmpi.w	#0xFFFF,(%a0) /* Feeling lucky, punk? */
+       cmpi.w	#0xFFFF,(%a0)
        beq.s DataisFF
        move.w	#0x2020,(%a0)
        move.w	#0x2020,(%a0)
@@ -230,9 +230,9 @@ WriteLoop:
        beq     dataident      /* Identical */
        move.w  #0x4040,(%a0) 
        move.w  (%a1)  ,(%a0) 
-       bsr.s	Delay_10uS         /* 10 uS */
+       bsr.s   Delay_10uS     /* 10 uS */
        move.w  #0xC0C0,(%a0)  /* Write compare command */
-       bsr.s Delay_6uS         
+       bsr.s   Delay_6uS         
        cmp.w   (%a0)  , %d1   /* Compare actual data */
        beq.s   ReadMode      
        subq.b  #1     , %d0   /* Decrement tries if we got here */
