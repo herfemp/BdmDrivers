@@ -8,6 +8,24 @@
 .global WriteBufferNEW 
 .global WriteBuffer 
 
+.global Delay_6uS	
+.global Delay_10uS
+.global Delay_20uS
+
+
+
+/*        
+Delay_20uS:       
+	move.l %d0, -(%sp)
+	move.l  #26, %d0  
+us20loop:         
+	sub.l #1, %d0     
+	tst.l %d0         
+	bne us20loop      
+	move.l (%sp)+, %d0
+rts
+*/
+
 
 /* Store id of flash in D7 */
 /*  Requires VPP:
@@ -56,7 +74,7 @@ Syscfg:
        move.w        %d1,(%a1)    /* Latch up high-voltage */
        move.b        %d1,(%a2)   
        move.l        %d1, -(%sp) 
-       bsr DelaymS             
+       bsr.w DelaymS             
        move.w    #0xFFFF,(%a0)    /* Reset flash */
        move.w        %d0,(%a0)   
        move.w    #0x9090,(%a0)    /* Send ID-command */
@@ -65,7 +83,7 @@ IDfound:
        addq           #2, %a0     /* Copy the higher part from one of the flash memories */
        move.b      (%a0), %d7     /* -Obviosly dangerous if the user decided to populate 2 different parts.. */
        move.l        %d1, -(%sp) 
-       bsr DelaymS             
+       bsr.w DelaymS             
        moveq          #1, %d0    
        bgnd                    
 
@@ -75,7 +93,7 @@ IDfound:
 FormatFlashNEW:             
        move.w    #0xF0F0,(%a0)  /* Reset Flash */
        pea (100).w          
-       jsr DelaymS          
+       bsr.w DelaymS          
        addq.l         #4, %sp        
 /* A0 and A1 is start and end */
        movea.l   #0xAAAA, %a2  
@@ -131,9 +149,9 @@ OOloop:
        beq.s OOisOO         
        move.w	 #0x4040,(%a2)
        clr.w       (%a2)        
-       jsr   Delay_10uS     
+       bsr.s   Delay_10uS     
        move.w	 #0xC0C0,(%a2)
-       jsr   Delay_6uS      
+       bsr.s   Delay_6uS      
        move.w      (%a2), %d1 
        beq.s OOEnRead       
        subq.b         #1, %d0 
@@ -147,12 +165,13 @@ OOloopcheck:
 OOisOO:                     
        addq.l  #2     , %a2 
        cmpa.l  %a1    , %a2 
-       bls.s OOResTries     
+       bls.s OOResTries
+     
 /*      Format flash         */
        move.w	#1000  , %d0   /* Maximum number of tries */
 FFloop:                     
-       cmpi.w	#0xFFFF,(%a0)
-       beq.s DataisFF             
+       cmpi.w	#0xFFFF,(%a0) /* Feeling lucky, punk? */
+       beq.s DataisFF
        move.w	#0x2020,(%a0)
        move.w	#0x2020,(%a0)
        pea     (10).w       
@@ -168,7 +187,7 @@ FFenRead:
        clr.w   (%a0)        
        bra.s FFloop               
 DataisFF:                   
-       addq.l	#2     , %a0 
+       addq.l	#2     , %a0
 FFloopChck:                 
        cmpa.l	%a1    , %a0 
        bhi.s EndCheck             
@@ -182,7 +201,26 @@ FormatSucc:
        moveq	#1     ,%d0  
        bgnd                 
 		
-      
+
+Delay_6uS:        
+	move.l %d0, -(%sp)
+	move.l  #8, %d0   
+us6loop:          
+	sub.l #1, %d0     
+	tst.l %d0         
+	bne us6loop       
+	move.l (%sp)+, %d0
+rts 
+	   
+Delay_10uS:       
+	move.l %d0, -(%sp)
+	move.l  #13, %d0  
+us10loop:         
+	sub.l #1, %d0     
+	tst.l %d0         
+	bne us10loop      
+	move.l (%sp)+, %d0
+rts      
 WriteBufferOLD:              
 ResTries:                    
        moveq   #25    , %d0   /* Tries */
@@ -192,9 +230,9 @@ WriteLoop:
        beq     dataident      /* Identical */
        move.w  #0x4040,(%a0) 
        move.w  (%a1)  ,(%a0) 
-       bsr	Delay_10uS         /* 10 uS */
+       bsr.s	Delay_10uS         /* 10 uS */
        move.w  #0xC0C0,(%a0)  /* Write compare command */
-       bsr Delay_6uS         
+       bsr.s Delay_6uS         
        cmp.w   (%a0)  , %d1   /* Compare actual data */
        beq.s   ReadMode      
        subq.b  #1     , %d0   /* Decrement tries if we got here */
@@ -206,13 +244,12 @@ loopcheck:
        bne.s   WriteLoop     
        bgnd                  
 dataident:                   	
-       addq.l  #2     , %a0  
+       addq.l  #2     , %a0 
        addq.l  #2     , %a1  
        cmpa.l  #0x1003FF,%a1 
        bls.s   ResTries      
        moveq   #1     , %d0  
        bgnd                  
-
 
 /* Is it really worth checking the error bit..? */       
 WriteBufferNEW:               
@@ -234,24 +271,10 @@ ss39sfwait:
        move.w      (%a0), %d1 
        cmp.w         %d1, %d0 
        bne.s ss39sfwait       
-/*     bne.s Checkdq5w     */
        bra.s ss39sfdone       
-/* Fix:                    */
-/*Checkdq5w:                  
-       andi.w    #0x0020, %d1 
-       beq.s ss39sfwait       
-       move.w      (%a0), %d0 
-       move.w      (%a0), %d1 
-       cmp.w         %d1, %d0 
-       beq.s ss39sfdone       
-       andi.w    #0xFF00, %d0  
-       cmp.w     #0xFF00, %d0 
-       beq.s ss39sfdone       
-       moveq          #0, %d0   Fff... 
-       bgnd                    */
-                              
+	   
 ss39sfident:                  
-       addq.l         #2, %a0 
+       addq.l         #2, %a0
        addq.l         #2, %a1 
 ss39sfdone:                   
        cmpa.l  #0x1003FF, %a1 
@@ -267,7 +290,7 @@ WriteBuffer:
        bra WriteBufferNEW   
 FormatFlash:                
        subq.l #1, %a1        /* .. */
-       cmp.w      #1, %d6   
+       cmp.w       #1, %d6   
        beq FormatFlashOLD   
        bra FormatFlashNEW   
 

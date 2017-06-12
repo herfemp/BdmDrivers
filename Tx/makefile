@@ -36,7 +36,9 @@ ifeq ($(OS),Windows_NT)
 	..\utils\bin2header out\TxDriver.bin
 	copy TxDriver.bin.h out\TxDriver.bin.h
 	del ..\Driverhost\Driverhost\Drivers\TxDriver.bin.h
+	del ..\..\Thingy2.0\BDM\TxDriver.bin.h
 	copy TxDriver.bin.h ..\Driverhost\Driverhost\Drivers\TxDriver.bin.h
+	copy TxDriver.bin.h ..\..\Thingy2.0\BDM\TxDriver.bin.h
 	del TxDriver.bin.h
 
 else
