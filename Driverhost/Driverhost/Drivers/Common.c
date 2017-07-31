@@ -149,17 +149,118 @@ uint8_t Flash(const uint16_t *Bufst, const uint16_t *DrvStart, uint8_t End){
 }
 
 
-// Quick routine for Jan; Dump binary.
+// 5388
+// 5031
+// 4108
+// 3780
+// 3775
+// 3611
+// 3234
+// 3221
+// 3202
+
+// Quick routines for Jan; Dump binary.
+void ShiftWait_p(const uint8_t *data){
+	
+	uint8_t temp;
+
+	do{	PORTD &=~(1<<4 | 1<<1);     // Pull down Clock and Data out
+		__asm("nop");
+		if(!(PIND & _BV(0))) break; // Attention-bit not set, abort loop and fetch our valuable data.
+
+		// Delays.. I hate them
+		__asm("nop");
+		__asm("nop");
+		__asm("nop");
+
+		// Enable SPI
+		UCSR0C = (1<<UMSEL01)|(1<<UMSEL00)|(1<<UCPHA0)|(1<<UCPOL0);
+		UCSR0B = (1<<RXEN0)|(1<<TXEN0);
+	
+		// Clock out 0's
+		UDR0 = 0;
+		while(!(UCSR0A&(1<<RXC0)))	;
+		temp = UDR0;
+
+		UDR0 = 0;
+		while(!(UCSR0A&(1<<RXC0)))	;
+		temp = UDR0;
+
+		// Disable SPI
+		UCSR0C = 0;
+		UCSR0B = 0;
+
+		// Delays.. I hate them
+		__asm("nop");
+		__asm("nop");
+
+	}while (1);
+
+	// Enable SPI
+	UCSR0C = (1<<UMSEL01)|(1<<UMSEL00)|(1<<UCPHA0)|(1<<UCPOL0);
+	UCSR0B = (1<<RXEN0)|(1<<TXEN0);
+		
+	// Clock out 0's
+	UDR0 = 0;
+	while(!(UCSR0A&(1<<RXC0)))	;
+	// Fetch data and increment pointer
+	*(uint8_t *)data++=UDR0;
+
+	// Repeat
+	UDR0 = 0;
+	while(!(UCSR0A&(1<<RXC0)))	;
+	*(uint8_t *)data=UDR0;
+
+	// Disable SPI
+	UCSR0C = 0;
+	UCSR0B = 0;
+
+	// Kill warning without compromising speed
+	return;
+	temp = temp;
+}
+
+// Let's break every rule possible to see how fast this tub can move
+inline void Exec_DumpCMD_p(const uint16_t *data){
+
+	// Pull down clock and data out
+	PORTD &=~(1<<4 | 1<<1);
+
+	// Enable SPI
+	UCSR0C = (1<<UMSEL01)|(1<<UMSEL00)|(1<<UCPHA0)|(1<<UCPOL0);
+	UCSR0B = (1<<RXEN0)|(1<<TXEN0);
+	
+	// Clock out dump command
+	UDR0 = DUMP32_BDM>>8&0xFF;
+	while(!(UCSR0A&(1<<RXC0)))	;
+	uint8_t temp = UDR0;
+
+	UDR0 = DUMP32_BDM&0xFF;
+	while(!(UCSR0A&(1<<RXC0)))	;
+	// temp = UDR0;
+	
+	// Disable SPI
+	UCSR0C = 0;
+	UCSR0B = 0;
+
+	__asm("nop");
+	
+	ShiftWait_p((uint8_t *)&data[0]);
+	ShiftWait_p((uint8_t *)&data[1]);
+
+	return ;
+	temp = temp;
+}
+
+
 uint8_t DumpFlash(uint16_t SizeK){
 
-	if(!Systype)
-		return 0;
+	BenchTime = 65535;
 
 	uint16_t checksum16 = 0;
 	uint8_t  cntr       = 0;
 
-	SizeK *=4; // Multiply by four.
-	// Reason: We dump in chunks of 256 bytes
+	SizeK <<= 2; // Multiply by four; We dump in chunks of 256 bytes
 
 	if(f_open(&Fil, "New.bin", FA_WRITE | FA_CREATE_ALWAYS) != FR_OK)
 		return 0;
@@ -173,10 +274,8 @@ uint8_t DumpFlash(uint16_t SizeK){
 	cntr += 2;
 
 	do{ // Fill buffer with 256 bytes
-		do{ Exec_DumpCMD();
-			*(uint16_t *) &Fbuf[cntr++] = bdmresp32<<8 | bdmresp32>>8;
-			*(uint16_t *) &Fbuf[++cntr] = bdmresp16<<8 | bdmresp16>>8;
-			cntr += 2;
+		do{ Exec_DumpCMD_p((uint16_t *)&Fbuf[cntr]);
+			cntr +=4;
 		}while(cntr);
 		
 		do{ checksum16 += Fbuf[cntr++]; 
@@ -188,6 +287,7 @@ uint8_t DumpFlash(uint16_t SizeK){
 		ShowAddr(0, SizeK);
 	}while(--SizeK);
 
+	showval(65535 - BenchTime);
 	ShowAddr(1, checksum16);
 	return 1;
 }
