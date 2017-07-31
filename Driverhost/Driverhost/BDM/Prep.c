@@ -197,7 +197,8 @@ void PrepT(){
 			sleep(2000);
 			if(bdmresp16&0x100){ // Trionic 7
 				Systype = 2;
-				ClockSet=0x7F00; // 16,67 .. This is wrong but it works
+				ClockSet = 0;
+				//ClockSet=0x7F00; // 16,67 .. This is wrong but it works
 
 			}else{ // Trionic 5
 				Systype = 1;
@@ -231,13 +232,9 @@ void PrepT(){
 		lcd_puts("Unk. System!", 0);
 		while(1){};
 	}
-	sleep(1000);
+	sleep(100);
 	//UBRR0 = 0;
 	UBRR0H = 0; // 4 bits
-
-	// UBRR0L = 3; // 8 bits
-	//UBRR0H = 0;
-	// UCSR0A |= (1 << U2X0);
 
 	// Kinda unstable but stupidly fast!
 	UBRR0L = 1; // 8 bits

@@ -223,13 +223,16 @@ void ShiftWait(){
 	
 
 	do{	PORTD &=~(1<<4 | 1<<1);				// Pull down Clock and Data out
-		disenablespi(1);					// Enable SPI
+		__asm("nop");
 		if(!(PIND & _BV(0) ? 1: 0)) break;	// Attention-bit not set, abort loop and fetch our valuable data.
+		disenablespi(1);					// Enable SPI
+		
 		SendRecSPI2(0);						// Clock out garbage
 		SendRecSPI2(0);
 		disenablespi(0);					// kill SPI
 	}while (1);
 
+	disenablespi(1);					// Enable SPI
 	bdmresp = SendRecSPI2(0) <<8;
 	bdmresp+= SendRecSPI2(0);
 	disenablespi(0); // kill SPI
@@ -239,6 +242,7 @@ void ShiftWait(){
 inline void ShiftData(uint16_t package){
 
 	PORTD &=~(1<<4 | 1<<1);
+	__asm("nop");
 	Attn = PIND & _BV(0) ? 1: 0;
 
 

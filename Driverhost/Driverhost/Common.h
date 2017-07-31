@@ -24,6 +24,9 @@ uint16_t bdmresp;
 uint16_t bdmresp16;
 uint16_t bdmresp32;
 
+
+uint8_t DumpFlash(uint16_t SizeK);
+
 char printnumber[5];
 uint8_t Flash(const uint16_t *Bufst, const uint16_t *DrvStart, uint8_t End);
 uint8_t LDRDemand(uint8_t Command, const uint16_t *Addr, uint8_t End);
@@ -60,17 +63,19 @@ void clrprintlcd(const char *s);
 void ShowAddr(uint8_t Had, uint16_t Lad);
 void showval(uint16_t val);
 
-
+// PORTD
 #define P_RST  3, 2
 #define P_BKPT 3, 4
 #define P_FRZ  3, 7
 #define P_DSI  3, 1
 #define P_DSO  3, 0
-
-#define F_CPU 16000000UL
-
+// PORTB
 #define SDCARD_CS_PORT 1
 #define SDCARD_CS_PIN  0
+
+
+
+#define F_CPU 16000000UL
 
 #define	MCP2515_CS_1   1,2
 #define	MCP2515_INT_1  B,1
