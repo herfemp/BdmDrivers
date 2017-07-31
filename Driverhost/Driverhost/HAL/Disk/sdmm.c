@@ -40,8 +40,8 @@
 // #define CS_L()		WritePin (SDCARD_CS_PORT, SDCARD_CS_PIN, 0)//PORTD &= ~(1 << PORTD2)
 
 
-#define	CS_H()		PORTB |= (1 << PORTB0)
-#define CS_L()		PORTB &= ~(1 << PORTB0)
+#define	CS_H()		PORTB |= (1 << SDCARD_CS_PIN)
+#define CS_L()		PORTB &= ~(1 << SDCARD_CS_PIN)
 
 static
 
