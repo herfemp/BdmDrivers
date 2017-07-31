@@ -29,6 +29,15 @@
 // T7: 12,62
 // T8: 28,9
 
+
+
+uint16_t Flashsize[4] = {
+	   0,
+	 256,
+	 512,
+	1024
+};
+
 int main(void){
 
 	timer_IRQ_init();
@@ -42,14 +51,22 @@ int main(void){
 	f_mount(&FatFs, "", 0);
 
 	// Crank SPI to eleven
-	SPCR = (1<<SPE)|(1<<MSTR) | 0;
+	SPCR = (1<<SPE)|(1<<MSTR);
 	SPSR = (1<<SPI2X);
+	// SPSR =	(1<<SPR0)|(1<<SPR1);
 
+	// Make sure MCP2515 SPI-communication is not enabled
 	SetPinDir(MCP2515_CS_1, 1);
 	WritePin(MCP2515_CS_1, 1);
-	SetPinDir(1, 5, 1);
-	SetPinDir(1, 3, 1);
-	SetPinDir(1, 4, 0);
+	
+	// PortB
+	SetPinDir(1, 0, 1); // CS out
+	WritePin( 1, 0, 1); // CS high
+	SetPinDir(1, 3, 1); // MOSI out
+	SetPinDir(1, 4, 0); // MISO in
+	SetPinDir(1, 5, 1); // SCK out
+
+	
 
 	uint16_t Bufst[2];
 	uint16_t Driv[2];
@@ -58,9 +75,13 @@ int main(void){
 	Driv[0]  = 0x10;
 	Driv[1]  = 0x400;
 
+	// Set this one to 0 to allow for flashing
 	Systype = 0;
-	if (ResetTarget() && StopTarget())
+
+	if(!Systype && ResetTarget() && StopTarget())
 		PrepT();
+	else
+		Systype = 0;
 
 	if(Systype == 1){
 
@@ -70,7 +91,8 @@ int main(void){
 				ShowAddr(1, bdmresp16);
 				while(1){};
 			}
-		}
+		}else
+			lcd_puts("nof", 0);
 	}
 	else if(Systype == 2){
 
@@ -80,7 +102,8 @@ int main(void){
 				ShowAddr(1, bdmresp16);
 				while(1){};
 			}
-		}
+		}else
+			lcd_puts("nof", 0);
 	}else if (Systype == 3){
 
 		if(f_open( &Fil, "t8.bin", FA_OPEN_EXISTING | FA_READ ) == FR_OK){
@@ -90,7 +113,7 @@ int main(void){
 				while(1){};
 			}
 		}else
-		lcd_puts("nof", 0);
+			lcd_puts("nof", 0);
 	}else if (Systype == 4){
 
 		if(!FlashMCP()){
@@ -100,11 +123,32 @@ int main(void){
 		}
 	}
 	f_close(&Fil);
-	ResetTarget();
 
+	// Hack hack..
+	uint8_t IndFault = 1;
 
-	// lcd_puts("Running?", 0);
-	while (1){};
+	if (ResetTarget() && StopTarget()){
+		PrepT();
+	
+		if(Systype)
+			IndFault = DumpFlash(Flashsize[Systype])?0:1;
+		else
+			IndFault = 1;
+	}
+	f_close(&Fil);
+	
+	// Disable SPI to allow for regular toggling of gpio
+	SPCR = 0;
+
+	// ResetTarget();
+	while (1){
+	
+		sleep(250);
+		PORTB = (PORTB&0xDF)|1<<5;
+
+		sleep(250);
+		if(IndFault) PORTB = PORTB&0xDF;
+	};
 
 	return 0;
 }
