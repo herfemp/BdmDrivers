@@ -29,14 +29,28 @@
 // T7: 12,62
 // T8: 28,9
 
+// Whohoo.. Time to test all of them again
 
+const char t5bin[] = "t5.bin";
+const char t7bin[] = "t7.bin";
+const char t8bin[] = "t8.bin";
 
-uint16_t Flashsize[4] = {
+const uint16_t Flashsize[4] = {
 	   0,
 	 256,
 	 512,
 	1024
 };
+
+const char *fname[] = {
+	0,
+	t5bin,
+	t7bin,
+	t8bin
+};
+
+
+
 
 int main(void){
 
@@ -66,14 +80,6 @@ int main(void){
 	SetPinDir(1, 4, 0); // MISO in
 	SetPinDir(1, 5, 1); // SCK out
 
-	
-
-	uint16_t Bufst[2];
-	uint16_t Driv[2];
-	Bufst[0] = 0xF;
-	Bufst[1] = 0xFFFC;
-	Driv[0]  = 0x10;
-	Driv[1]  = 0x400;
 
 	// Set this one to 0 to allow for flashing
 	Systype = 0;
@@ -83,37 +89,18 @@ int main(void){
 	else
 		Systype = 0;
 
-	if(Systype == 1){
+	if(Systype && Systype<4){
 
-		if(f_open( &Fil, "t5.bin", FA_OPEN_EXISTING | FA_READ ) == FR_OK){
-			if(!Flash(&Bufst[0], &Driv[0], 4)){
+		if(f_open( &Fil, fname[Systype], FA_OPEN_EXISTING | FA_READ ) == FR_OK){
+
+			if(!Flash(Flashsize[Systype])){
 				lcd_puts("fail", 0);
 				ShowAddr(1, bdmresp16);
 				while(1){};
 			}
 		}else
 			lcd_puts("nof", 0);
-	}
-	else if(Systype == 2){
-
-		if(f_open( &Fil, "t7.bin", FA_OPEN_EXISTING | FA_READ ) == FR_OK){
-			if(!Flash(&Bufst[0], &Driv[0], 8)){
-				lcd_puts("fail", 0);
-				ShowAddr(1, bdmresp16);
-				while(1){};
-			}
-		}else
-			lcd_puts("nof", 0);
-	}else if (Systype == 3){
-
-		if(f_open( &Fil, "t8.bin", FA_OPEN_EXISTING | FA_READ ) == FR_OK){
-			if(!Flash(&Bufst[0], &Driv[0], 0x10)){
-				lcd_puts("fail", 0);
-				ShowAddr(1, bdmresp16);
-				while(1){};
-			}
-		}else
-			lcd_puts("nof", 0);
+	
 	}else if (Systype == 4){
 
 		if(!FlashMCP()){

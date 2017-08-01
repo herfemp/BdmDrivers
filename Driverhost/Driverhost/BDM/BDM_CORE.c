@@ -194,23 +194,8 @@ void Exec_ReadCMD_s(uint16_t AddrH, uint16_t AddrL, uint16_t cmd){
 }
 
 
-
-
-
-
 /* Hardware-assisted functions */ 
-void disenablespi(uint8_t onoff){
-
-	if(onoff){
-		UCSR0C = (1<<UMSEL01)|(1<<UMSEL00)|(1<<UCPHA0)|(1<<UCPOL0);
-		UCSR0B = (1<<RXEN0)|(1<<TXEN0);
-	}else{
-		UCSR0C = 0;
-		UCSR0B = 0;
-	}
-}
-
-uint8_t SendRecSPI2(uint8_t dt){
+inline uint8_t SendRecSPI2(uint8_t dt){
 
 	while(!(UCSR0A&(1<<UDRE0)))	;
 	UDR0 = dt;
@@ -219,23 +204,23 @@ uint8_t SendRecSPI2(uint8_t dt){
 	return UDR0&0xff;
 }
 
-void ShiftWait(){
+inline void ShiftWait(){
 	
 
 	do{	PORTD &=~(1<<4 | 1<<1);				// Pull down Clock and Data out
 		__asm("nop");
 		if(!(PIND & _BV(0) ? 1: 0)) break;	// Attention-bit not set, abort loop and fetch our valuable data.
-		disenablespi(1);					// Enable SPI
+		EnSPI;					            // Enable SPI
 		
 		SendRecSPI2(0);						// Clock out garbage
 		SendRecSPI2(0);
-		disenablespi(0);					// kill SPI
+		UCSR0C = UCSR0B = 0;				// kill SPI
 	}while (1);
 
-	disenablespi(1);					// Enable SPI
+	EnSPI;					// Enable SPI
 	bdmresp = SendRecSPI2(0) <<8;
 	bdmresp+= SendRecSPI2(0);
-	disenablespi(0); // kill SPI
+	UCSR0C = UCSR0B = 0; // kill SPI
 	
 }
 
@@ -246,10 +231,10 @@ inline void ShiftData(uint16_t package){
 	Attn = PIND & _BV(0) ? 1: 0;
 
 
-	disenablespi(1);
+	EnSPI;
 	bdmresp = (SendRecSPI2( package>>8&0xFF )) <<8;
 	bdmresp+= (SendRecSPI2(package&0xFF));
-	disenablespi(0);
+	UCSR0C = UCSR0B = 0;
 	
 }
 
@@ -299,20 +284,10 @@ inline void Exec_FillCMD(uint16_t DataH, uint16_t DataL){
 
 	ShiftWait();
 }
-inline void Exec_DumpCMD(){
-
-	ShiftData(DUMP32_BDM);
-	
-	ShiftWait();
-	bdmresp32=bdmresp;
-
-	ShiftWait();
-	bdmresp16=bdmresp;
-}
 
 // Very weird functions for fill32..
 // This one sends bytes in the wrong order
-void SendRecSPInoresp(uint16_t dt){
+inline void SendRecSPInoresp(uint16_t dt){
 
 	while(!(UCSR0A&(1<<UDRE0)))	;
 	UDR0 = dt&0xFF;
@@ -325,9 +300,10 @@ void SendRecSPInoresp(uint16_t dt){
 	while(!(UCSR0A&(1<<RXC0)))	;
 	temp = UDR0; // This register must be read..
 
+	return;
 	temp = temp; // Aaaand kill that annoying warning!
 }
-void ShiftData_p(const uint16_t *package){
+inline void ShiftData_p(const uint16_t *package){
 
 	PORTD &=~(1<<4 | 1<<1);
 	UCSR0C = (1<<UMSEL01)|(1<<UMSEL00)|(1<<UCPHA0)|(1<<UCPOL0);
@@ -338,7 +314,7 @@ void ShiftData_p(const uint16_t *package){
 }
 
 
-void SPInull(){
+inline void SPInull(){
 
 	while(!(UCSR0A&(1<<UDRE0)))	;
 	UDR0 = 0;
@@ -350,6 +326,7 @@ void SPInull(){
 	while(!(UCSR0A&(1<<RXC0)))	;
 	temp = UDR0; // This register must be read..
 
+	return;
 	temp = temp; // Aaaand kill that annoying warning!
 }
 // Store four bytes and let the ECU do the address-counting. Do not fetch response.

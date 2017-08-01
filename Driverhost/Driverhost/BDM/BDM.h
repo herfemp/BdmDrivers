@@ -11,7 +11,9 @@
 
 ///< D/A reg
 #define R_DREG_BDM	0x2180
+#define R_AREG_BDM	0x2188
 #define W_DREG_BDM	0x2080
+#define W_AREG_BDM	0x2088
 ///< 0-7 = Data Reg
 ///< 8-F = Address Reg
 
@@ -54,7 +56,9 @@
 #define FILL16_BDM  0x1C40
 #define FILL32_BDM  0x1C80
 
-
+#define SPINull UDR0   = 0; while(!(UCSR0A&(1<<RXC0)))	;
+#define EnSPI   UCSR0C = (1<<UMSEL01)|(1<<UMSEL00)|(1<<UCPHA0)|(1<<UCPOL0); \
+                UCSR0B = (1<<RXEN0)|(1<<TXEN0);
 
 
 #endif /* BDM_H_ */

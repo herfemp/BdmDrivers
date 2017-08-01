@@ -23,6 +23,7 @@ void SetPinDir(uint8_t port, uint8_t pin, uint8_t dir){
 		/***/if (port==1) DDRB &=~(1<<pin);
 		else if (port==2) DDRC &=~(1<<pin);
 		else if (port==3) DDRD &=~(1<<pin);
+
 	}if(dir==2){
 		/***/if (port==1) PORTB &=~(1<<pin); 
 		else if (port==2) PORTC &=~(1<<pin);

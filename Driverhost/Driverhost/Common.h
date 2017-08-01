@@ -28,8 +28,8 @@ uint16_t bdmresp32;
 uint8_t DumpFlash(uint16_t SizeK);
 
 char printnumber[5];
-uint8_t Flash(const uint16_t *Bufst, const uint16_t *DrvStart, uint8_t End);
-uint8_t LDRDemand(uint8_t Command, const uint16_t *Addr, uint8_t End);
+uint8_t Flash(uint16_t SizeK);
+uint8_t LDRDemand(uint8_t cmd, const uint16_t *Addr, uint8_t End);
 uint8_t FlashMCP();
 
 volatile uint16_t BenchTime;
