@@ -4,32 +4,17 @@
 
 
 // Benchmarks when flashing real data from file instead of 0-fill:
-// T8 main: 38,2 Secs
-// T8 MCP : 17~  Secs
-// T7: 17,1 Secs
 // T5:
-//  tn28f010 : 11,1 Secs. Kid you not ;)
-// sst39sf020:  7,1 Secs (for 0 - 0x40000, ie half of the flash)
-// cat28f010 : 11,3 Secs. Box 1
-// cat28f010 : 11,2 Secs. Box 2
+// 39sf020  : (for 0 - 0x40000, ie half of the flash) 4,7 secs
+//  tn28f010: 8,48
+// cat28f010: 8,42
+// T7: 11,81
+// T8: 26,02
 
-// With new write-routine:
-// t5:
-// tn28f010 : 9,3
-//  39sf020 : 5,5 (for 0 - 0x40000, ie half of the flash) -This is getting hilarious! ..Same time @20,1 MHz so this is clearly the host that is limiting.
-// cat28f010: both @ 9,2~ 
-// T7: 13,2~
-// T8: 29,6~
-
-// Even more improved:
-// T5:
-// 39sf020  : (for 0 - 0x40000, ie half of the flash) 5,15 secs
-//  tn28f010: 8,9
-// cat28f010: 8,87
-// T7: 12,62
-// T8: 28,9
-
-// Whohoo.. Time to test all of them again
+// Dump:
+// T5: 2.54 Secs (!)
+// T7: 5,03
+// t8: 8,63
 
 const char t5bin[] = "t5.bin";
 const char t7bin[] = "t7.bin";
@@ -110,6 +95,8 @@ int main(void){
 		}
 	}
 	f_close(&Fil);
+
+	sleep(2000);
 
 	// Hack hack..
 	uint8_t IndFault = 1;
