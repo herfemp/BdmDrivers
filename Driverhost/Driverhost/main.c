@@ -2,19 +2,20 @@
 
 #define TIMER_TOP 62
 
-
 // Benchmarks when flashing real data from file instead of 0-fill:
 // T5:
-// 39sf020  : (for 0 - 0x40000, ie half of the flash) 4,7 secs
+// 39sf020  : (for 0 - 0x40000, ie half of the flash) 4,67 secs
 //  tn28f010: 8,48
-// cat28f010: 8,42
-// T7: 11,81
-// T8: 26,02
+// cat28f010: 8,37
+
+//  T7: 11,81
+//  T8: 26,02
+// MCP: 14,1 - 37,2 Secs.
 
 // Dump:
-// T5: 2.54 Secs (!)
-// T7: 5,03
-// t8: 8,63
+// T5: 2.33 Secs (!)
+// T7: 4,71
+// t8: 7,94
 
 const char t5bin[] = "t5.bin";
 const char t7bin[] = "t7.bin";
@@ -33,9 +34,6 @@ const char *fname[] = {
 	t7bin,
 	t8bin
 };
-
-
-
 
 int main(void){
 
@@ -104,7 +102,7 @@ int main(void){
 	if (ResetTarget() && StopTarget()){
 		PrepT();
 	
-		if(Systype)
+		if(Systype && Systype != 4)
 			IndFault = DumpFlash(Flashsize[Systype])?0:1;
 		else
 			IndFault = 1;

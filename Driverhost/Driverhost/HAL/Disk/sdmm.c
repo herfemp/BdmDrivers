@@ -131,21 +131,25 @@ static
 void xmit_mmc (
 	const BYTE* buff,	/* Data to be sent */
 	UINT bc				/* Number of bytes to send */
-)
-{
+){
 	BYTE d;
 
-do {
-	d = *buff++;	/* Get a byte to be sent */
+	do{	
+#ifdef AVR
 
+		SPDR = *buff++;
+		while( !( SPSR & (1<<SPIF)))     ;
+		d = SPDR;
+#else
 
-	//SPDR = d;
-	//while( !( SPSR & (1<<SPIF) ) )
-	//	;
-	SendRecSPI(d);
+		d = *buff++;	/* Get a byte to be sent */
+		SendRecSPI(d);
+#endif
+	} while (--bc);
 
-} while (--bc);
-				
+#ifdef AVR
+	d = d;	
+#endif		
 }
 
 
@@ -161,17 +165,13 @@ void rcvr_mmc (
 ){
 
 	do {
-		
-
-		// put byte in send-buffer
-		//SPDR = 0xff;
-		
-		// wait until byte was send
-		//while( !( SPSR & (1<<SPIF) ) )
-		//	;
-		
-		//*buff++ = SPDR;			/* Store a received byte */
+#ifdef AVR
+		SPDR = 0xFF;
+		while( !( SPSR & (1<<SPIF)))     ;
+		*buff++ = SPDR;
+#else
 		*buff++ = SendRecSPI(0xff);
+#endif
 	} while (--bc);
 }
 

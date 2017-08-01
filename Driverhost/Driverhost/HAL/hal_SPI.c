@@ -24,7 +24,7 @@
 #endif
 
 
-uint8_t SendRecSPI(uint8_t dt){
+inline uint8_t SendRecSPI(uint8_t dt){
 #ifdef STM32F103RB
 	while (SPI_I2S_GetFlagStatus(SPIz, SPI_I2S_FLAG_TXE) == RESET)	;
 	SPI_I2S_SendData(SPIz, (uint8_t) dt);
