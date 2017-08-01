@@ -17,10 +17,6 @@
 // T7: 4,71
 // t8: 7,94
 
-const char t5bin[] = "t5.bin";
-const char t7bin[] = "t7.bin";
-const char t8bin[] = "t8.bin";
-
 const uint16_t Flashsize[4] = {
 	   0,
 	 256,
@@ -30,9 +26,9 @@ const uint16_t Flashsize[4] = {
 
 const char *fname[] = {
 	0,
-	t5bin,
-	t7bin,
-	t8bin
+	"t5.bin",
+	"t7.bin",
+	"t8.bin",
 };
 
 int main(void){

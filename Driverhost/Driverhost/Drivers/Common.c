@@ -21,6 +21,7 @@ uint8_t UploadDRV(){
 	return Location >= t5loaderbytes ? 1:0;
 }
 
+// uint16_t Drvst[2] = {0x10, 0x0400};
 
 /* Commands:
  * 3: Init hardware
@@ -30,22 +31,25 @@ uint8_t UploadDRV(){
  * Stores result in D0
  * 1: OK
  * 0: Fail*/
-uint8_t LDRDemand(uint8_t cmd, const uint16_t *Addr, uint8_t End){
+uint8_t LDRDemand(uint8_t cmd, uint8_t End){
 
-	Exec_WriteCMD(0, 0, W_DREG_BDM  ,   0, cmd); // Store command in D0
-	Exec_WriteCMD(0, 0, W_AREG_BDM  ,   0,   0); // A0 = Start addr
-	Exec_WriteCMD(0, 0, W_AREG_BDM+1, End,   0); // A1 = End addr
+	uint8_t i;
 
-	// Set PC to start of driver
-	Exec_WriteCMD(0, 0, W_SREG_BDM, Addr[0], Addr[1]);
-	Exec_WriteCMD(0, 0, 0, 0, 0);
+	Exec_WriteCMD(0, 0, W_DREG_BDM  ,   0,    cmd); // Store command in D0
+	Exec_WriteCMD(0, 0, W_AREG_BDM  ,   0,      0); // A0 = Start addr
+	Exec_WriteCMD(0, 0, W_AREG_BDM+1, End,      0); // A1 = End addr
+	Exec_WriteCMD(0, 0, W_SREG_BDM,  0x10, 0x0400); // Set PC to start of driver
+	
+	if(Systype == 4) // MCP Hack; Set PC to start of driver
+		Exec_WriteCMD(0, 0, W_SREG_BDM, 0x08, 0x1BFC); 
+    
+	ShiftData(0);
 	ShiftData_s(BDM_GO);
 
 	while(ReadPin(P_FRZ))  ;
 
-	MiscTime=3;
-	do{ if(ReadPin(P_RST) && !ReadPin(P_FRZ)) MiscTime=3;
-	}while (MiscTime);
+	for(i=8; i>0; i--) // De-bounce
+		if(ReadPin(P_RST) && !ReadPin(P_FRZ) && i < 8) i +=2;
 	
 	///< Read D0
 	Exec_ReadCMD(0, 0, R_DREG_BDM);
@@ -56,35 +60,32 @@ uint8_t LDRDemand(uint8_t cmd, const uint16_t *Addr, uint8_t End){
 uint8_t Fbuf[600];
 
 // Write flash data
-uint8_t LDRWrite(const uint16_t *Bufstart, const uint16_t *LDRAddr, uint16_t SizeK){
+uint8_t LDRWrite(uint16_t SizeK){
 
 	uint16_t   i;
 
 	// Prefill buffer
-	f_read(&Fil, &Fbuf, 600, &bw); // Read more than 512 bytes to force ff to read two sectors
-	if(bw!=600) return 0;
+	if(f_read(&Fil, &Fbuf, 600, &bw)!=FR_OK)   return 0;
 
 	Exec_WriteCMD(0, 0, W_DREG_BDM, 0, 1); // Store command in D0
 	Exec_WriteCMD(0, 0, W_AREG_BDM, 0, 0); // Store addr in A0
 
-	do{ Exec_WriteCMD(Bufstart[0], Bufstart[1], WRITE32_BDM, 0,0); // Ugly solution to start the fill command at the right address..
+	do{ Exec_WriteCMD(0xF, 0xFFFC, WRITE32_BDM, 0,0); // Ugly solution to start the fill command at the right address..
 	
 		for(i=0; i<600; i+=4)
 			Exec_FillCMD_p((uint16_t *)&Fbuf[i]); // This one will byteswap automatically
 
-		f_read(&Fil, &Fbuf, 424, &bw);
-		if(bw!=424) return 0;
+		if(f_read(&Fil, &Fbuf, 424, &bw)!=FR_OK)   return 0;
 
 		for(i=0; i<424; i+=4)
 			Exec_FillCMD_p((uint16_t *)&Fbuf[i]); // This one will byteswap automatically
 
-		Exec_WriteCMD(0, 0, W_SREG_BDM, LDRAddr[0], LDRAddr[1]); // Set PC to start of driver
+		Exec_WriteCMD(0, 0, W_SREG_BDM, 0x10, 0x0400); // Set PC to start of driver
 		ShiftData(0);
 		ShiftData_s(BDM_GO);
 		
 		if(SizeK > 1){
-			f_read(&Fil, &Fbuf, 600, &bw);
-			if(bw!=600) return 0;
+			if(f_read(&Fil, &Fbuf, 600, &bw)!=FR_OK)   return 0;
 		}
 
 		// De-bounce
@@ -103,9 +104,6 @@ uint8_t LDRWrite(const uint16_t *Bufstart, const uint16_t *LDRAddr, uint16_t Siz
 
 uint8_t Flash(uint16_t SizeK){
 
-	uint16_t Bufst[2] = {0x0F, 0xFFFC};
-	uint16_t Drvst[2] = {0x10, 0x0400};
-	
 	BenchTime=65535;
 	clrprintlcd("Ul");
 	UploadDRV();
@@ -113,16 +111,16 @@ uint8_t Flash(uint16_t SizeK){
 	SetPinDir(P_RST, 0);
 
 	clrprintlcd("Init");
-	if(!LDRDemand(3, &Drvst[0], 0)) return 0;
+	if(!LDRDemand(3, 0)) return 0;
 
 	// Exec_ReadCMD(0, 0, R_DREG_BDM+7); // Read D7
 	// ShowAddr(1, bdmresp16);
 
 	clrprintlcd("Erase");
-	if(!LDRDemand(2, &Drvst[0], SizeK/64)) return 0;
+	if(!LDRDemand(2, SizeK/64)) return 0;
 
 	clrprintlcd("Flash");
-	if(!LDRWrite(&Bufst[0], &Drvst[0], SizeK)) return 0;
+	if(!LDRWrite(SizeK)) return 0;
 		
 	clrprintlcd("OK");
 
@@ -135,17 +133,6 @@ uint8_t Flash(uint16_t SizeK){
 #define nop2    __asm("nop\nnop");
 
 
-// 5388
-// 5031
-// 4108
-// 3780
-// 3775
-// 3611
-// 3234
-// 3221
-// 3202
-// 2942
-// 2934
 // Quick routines for Jan; Dump binary.
 void ShiftWait_p(const uint8_t *data){
 

@@ -29,7 +29,7 @@ uint8_t DumpFlash(uint16_t SizeK);
 
 char printnumber[5];
 uint8_t Flash(uint16_t SizeK);
-uint8_t LDRDemand(uint8_t cmd, const uint16_t *Addr, uint8_t End);
+uint8_t LDRDemand(uint8_t cmd, uint8_t End);
 uint8_t FlashMCP();
 
 volatile uint16_t BenchTime;

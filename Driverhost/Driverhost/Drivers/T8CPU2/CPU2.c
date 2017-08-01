@@ -82,18 +82,16 @@ uint8_t LDRWriteMCP(){
 
 uint8_t FlashMCP(){
 
-		
-	uint16_t DrvStart[2] = {LDRAddrH, LDRAddrL-4};
 	clrprintlcd("Prep..");
 	BenchTime=65535;
 		
 	if(!UploadDRVMCP())
 		return 0;
 				
-	if(!LDRDemand(3,&DrvStart[0], 0)) // Ask loader to configure everything
+	if(!LDRDemand(3, 0)) // Ask loader to configure everything
 		return 0;
 				
-	if(!LDRDemand(2,&DrvStart[0], 0)) // Format flash
+	if(!LDRDemand(2, 0)) // Format flash
 		return 0;
 				
 	clrprintlcd("Writing");
