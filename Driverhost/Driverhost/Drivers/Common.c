@@ -31,7 +31,7 @@ uint8_t UploadDRV(){
  * Stores result in D0
  * 1: OK
  * 0: Fail*/
-uint8_t LDRDemand(uint8_t cmd, uint8_t End){
+inline uint8_t LDRDemand(uint8_t cmd, uint8_t End){
 
 	uint8_t i;
 
@@ -60,7 +60,7 @@ uint8_t LDRDemand(uint8_t cmd, uint8_t End){
 uint8_t Fbuf[600];
 
 // Write flash data
-uint8_t LDRWrite(uint16_t SizeK){
+inline uint8_t LDRWrite(uint16_t SizeK){
 
 	uint16_t   i;
 
@@ -134,15 +134,17 @@ uint8_t Flash(uint16_t SizeK){
 
 
 // Quick routines for Jan; Dump binary.
-void ShiftWait_p(const uint8_t *data){
+inline void ShiftWait_p(const uint8_t *data){
 
 	do{	PORTD &=~(1<<4 | 1<<1);     // Pull down Clock and Data out
 
-		__asm("nop");
+		nop3;
+		nop2;
+		nop2;
+
 		if(!(PIND & _BV(0))) break; // Attention-bit not set, abort loop and fetch our valuable data.
 		
 		EnSPI; // Enable SPI		
-		nop3;  // Delays.. I hate them
 
 		// Clock out 0's
 		SPINull;
@@ -152,7 +154,6 @@ void ShiftWait_p(const uint8_t *data){
 		temp = temp;
 
 		UCSR0C = UCSR0B = 0; // Disable SPI
-		nop2; // Delays.. I hate them
 
 	}while (1);
 
@@ -194,6 +195,7 @@ inline void Exec_DumpCMD_p(const uint8_t *data){
 	ShiftWait_p(&data[0]);
 	ShiftWait_p(&data[2]);
 
+
 	return ;
 	temp = temp;
 }
@@ -233,6 +235,6 @@ uint8_t DumpFlash(uint16_t SizeK){
 	}while(--SizeK);
 
 	showval(65535 - BenchTime);
-	ShowAddr(1, checksum16);
+	ShowAddr(0, checksum16);
 	return 1;
 }

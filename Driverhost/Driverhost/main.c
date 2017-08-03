@@ -4,18 +4,19 @@
 
 // Benchmarks when flashing real data from file instead of 0-fill:
 // T5:
-// 39sf020  : (for 0 - 0x40000, ie half of the flash) 4,67 secs
+// 39sf020  : (for 0 - 0x40000, ie half of the flash) 4,64 secs
 //  tn28f010: 8,48
 // cat28f010: 8,37
+//  am28f010: 8,95
 
 //  T7: 11,81
-//  T8: 26,02
+//  T8: 25,43
 // MCP: 14,1 - 37,2 Secs.
 
 // Dump:
 // T5: 2.33 Secs (!)
-// T7: 4,71
-// t8: 7,94
+// T7: 4,68
+// t8: 7,85
 
 const uint16_t Flashsize[4] = {
 	   0,
