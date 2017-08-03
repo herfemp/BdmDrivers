@@ -1,7 +1,7 @@
 
 #include "../../common.h"
 #include "driver.bin.h"
-uint16_t mcploaderbytes = sizeof(driver_bin);
+const uint16_t mcploaderbytes = sizeof(driver_bin);
 
 #define LDRAddrH 0x0008/* Where in ram to upload the driver    */
 #define LDRAddrL 0x1C00
@@ -12,7 +12,7 @@ uint16_t mcploaderbytes = sizeof(driver_bin);
 #define LDRSucc 1
 #define LDRFail 0
 
-uint16_t CMFIMCR_Enable_shadow = (
+const uint16_t CMFIMCR_Enable_shadow = (
 //	0<<15 | // stop
 //	0<<14 | // protect
 	1<<13 | // SIE (Shadow information enable)
@@ -28,7 +28,7 @@ uint16_t CMFIMCR_Enable_shadow = (
 	3 = Minimum bus cycles = 2 clocks, 0 inserted wait states*/
 );
 
-uint16_t CMFIMCR_Enable = (
+const uint16_t CMFIMCR_Enable = (
 //	0<<15 | // stop
 //	0<<14 | // protect
 	0<<13 | // SIE (Shadow information enable)
@@ -43,7 +43,7 @@ uint16_t CMFIMCR_Enable = (
 	3 = Minimum bus cycles = 2 clocks, 0 inserted wait states*/
 );
 
-uint16_t CMFIMCR_Stop = (
+const uint16_t CMFIMCR_Stop = (
     1<<15 | // stop
 //	0<<14 | // protect
 	0<<13 | // SIE (Shadow information enable)

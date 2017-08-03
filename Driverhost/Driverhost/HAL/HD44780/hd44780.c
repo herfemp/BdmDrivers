@@ -85,20 +85,20 @@ void Delay_ms(uint32_t del){
 #define DDR(x) (*(&x - 1))           // Address of Input Register of Port X
 
 //PORT defines
-#define lcd_rs_port_low() WritePin(LCD_RS_PORT, LCD_RS_PIN, 0)//LCD_RS_PORT&=~_BV(LCD_RS_PIN)
+#define lcd_rs_port_low() WritePin(LCD_RS_PIN, 0)//LCD_RS_PORT&=~_BV(LCD_RS_PIN)
 #if RW_LINE_IMPLEMENTED==1
-  #define lcd_rw_port_low() WritePin(LCD_RW_PORT, LCD_RW_PIN, 0)//LCD_RW_PORT&=~_BV(LCD_RW_PIN)
+  #define lcd_rw_port_low() WritePin(LCD_RW_PIN, 0)//LCD_RW_PORT&=~_BV(LCD_RW_PIN)
 #endif
 #define lcd_db0_port_low() LCD_DB0_PORT&=~_BV(LCD_DB0_PIN)
 #define lcd_db1_port_low() LCD_DB1_PORT&=~_BV(LCD_DB1_PIN)
 #define lcd_db2_port_low() LCD_DB2_PORT&=~_BV(LCD_DB2_PIN)
 #define lcd_db3_port_low() LCD_DB3_PORT&=~_BV(LCD_DB3_PIN)
-#define lcd_db4_port_low() WritePin(LCD_DB4_PORT, LCD_DB4_PIN, 0)//LCD_DB4_PORT&=~_BV(LCD_DB4_PIN)
-#define lcd_db5_port_low() WritePin(LCD_DB5_PORT, LCD_DB5_PIN, 0)//LCD_DB5_PORT&=~_BV(LCD_DB5_PIN)
-#define lcd_db6_port_low() WritePin(LCD_DB6_PORT, LCD_DB6_PIN, 0)//LCD_DB6_PORT&=~_BV(LCD_DB6_PIN)
-#define lcd_db7_port_low() WritePin(LCD_DB7_PORT, LCD_DB7_PIN, 0)//LCD_DB7_PORT&=~_BV(LCD_DB7_PIN)
+#define lcd_db4_port_low() WritePin(LCD_DB4_PIN, 0)//LCD_DB4_PORT&=~_BV(LCD_DB4_PIN)
+#define lcd_db5_port_low() WritePin(LCD_DB5_PIN, 0)//LCD_DB5_PORT&=~_BV(LCD_DB5_PIN)
+#define lcd_db6_port_low() WritePin(LCD_DB6_PIN, 0)//LCD_DB6_PORT&=~_BV(LCD_DB6_PIN)
+#define lcd_db7_port_low() WritePin(LCD_DB7_PIN, 0)//LCD_DB7_PORT&=~_BV(LCD_DB7_PIN)
 
-#define lcd_rs_port_high() WritePin(LCD_RS_PORT, LCD_RS_PIN, 1)//LCD_RS_PORT|=_BV(LCD_RS_PIN)
+#define lcd_rs_port_high() WritePin(LCD_RS_PIN, 1)//LCD_RS_PORT|=_BV(LCD_RS_PIN)
 #if RW_LINE_IMPLEMENTED==1
   #define lcd_rw_port_high() WritePin(LCD_RW_PORT, LCD_RW_PIN, 1)//LCD_RW_PORT|=_BV(LCD_RW_PIN)
 #endif
@@ -106,10 +106,10 @@ void Delay_ms(uint32_t del){
 #define lcd_db1_port_high() LCD_DB1_PORT|=_BV(LCD_DB1_PIN)
 #define lcd_db2_port_high() LCD_DB2_PORT|=_BV(LCD_DB2_PIN)
 #define lcd_db3_port_high() LCD_DB3_PORT|=_BV(LCD_DB3_PIN)
-#define lcd_db4_port_high() WritePin(LCD_DB4_PORT, LCD_DB4_PIN, 1)//LCD_DB4_PORT|=_BV(LCD_DB4_PIN)
-#define lcd_db5_port_high() WritePin(LCD_DB5_PORT, LCD_DB5_PIN, 1)//LCD_DB5_PORT|=_BV(LCD_DB5_PIN)
-#define lcd_db6_port_high() WritePin(LCD_DB6_PORT, LCD_DB6_PIN, 1)//LCD_DB6_PORT|=_BV(LCD_DB6_PIN)
-#define lcd_db7_port_high() WritePin(LCD_DB7_PORT, LCD_DB7_PIN, 1)//LCD_DB7_PORT|=_BV(LCD_DB7_PIN)
+#define lcd_db4_port_high() WritePin(LCD_DB4_PIN, 1)//LCD_DB4_PORT|=_BV(LCD_DB4_PIN)
+#define lcd_db5_port_high() WritePin(LCD_DB5_PIN, 1)//LCD_DB5_PORT|=_BV(LCD_DB5_PIN)
+#define lcd_db6_port_high() WritePin(LCD_DB6_PIN, 1)//LCD_DB6_PORT|=_BV(LCD_DB6_PIN)
+#define lcd_db7_port_high() WritePin(LCD_DB7_PIN, 1)//LCD_DB7_PORT|=_BV(LCD_DB7_PIN)
 
 #define lcd_rs_port_set(value) if (value) lcd_rs_port_high(); else lcd_rs_port_low();
 #if RW_LINE_IMPLEMENTED==1
@@ -129,10 +129,10 @@ void Delay_ms(uint32_t del){
 #define lcd_db1_pin_get() (((PIN(LCD_DB1_PORT) & _BV(LCD_DB1_PIN))==0)?0:1)
 #define lcd_db2_pin_get() (((PIN(LCD_DB2_PORT) & _BV(LCD_DB2_PIN))==0)?0:1)
 #define lcd_db3_pin_get() (((PIN(LCD_DB3_PORT) & _BV(LCD_DB3_PIN))==0)?0:1)
-#define lcd_db4_pin_get() (!ReadPin(LCD_DB4_PORT, LCD_DB4_PIN)?0:1)//(((PIN(LCD_DB4_PORT_) & _BV(LCD_DB4_PIN))==0)?0:1)
-#define lcd_db5_pin_get() (!ReadPin(LCD_DB5_PORT, LCD_DB5_PIN)?0:1)//(((PIN(LCD_DB5_PORT_) & _BV(LCD_DB5_PIN))==0)?0:1)
-#define lcd_db6_pin_get() (!ReadPin(LCD_DB6_PORT, LCD_DB6_PIN)?0:1)//(((PIN(LCD_DB6_PORT_) & _BV(LCD_DB6_PIN))==0)?0:1)
-#define lcd_db7_pin_get() (!ReadPin(LCD_DB7_PORT, LCD_DB7_PIN)?0:1)//(((PIN(LCD_DB7_PORT_) & _BV(LCD_DB7_PIN))==0)?0:1)
+#define lcd_db4_pin_get() (!ReadPin(LCD_DB4_PIN)?0:1)//(((PIN(LCD_DB4_PORT_) & _BV(LCD_DB4_PIN))==0)?0:1)
+#define lcd_db5_pin_get() (!ReadPin(LCD_DB5_PIN)?0:1)//(((PIN(LCD_DB5_PORT_) & _BV(LCD_DB5_PIN))==0)?0:1)
+#define lcd_db6_pin_get() (!ReadPin(LCD_DB6_PIN)?0:1)//(((PIN(LCD_DB6_PORT_) & _BV(LCD_DB6_PIN))==0)?0:1)
+#define lcd_db7_pin_get() (!ReadPin(LCD_DB7_PIN)?0:1)//(((PIN(LCD_DB7_PORT_) & _BV(LCD_DB7_PIN))==0)?0:1)
 
 //DDR defines
 #define lcd_rs_ddr_low() DDR(LCD_RS_PORT)&=~_BV(LCD_RS_PIN)
@@ -143,23 +143,23 @@ void Delay_ms(uint32_t del){
 #define lcd_db1_ddr_low() DDR(LCD_DB1_PORT)&=~_BV(LCD_DB1_PIN)
 #define lcd_db2_ddr_low() DDR(LCD_DB2_PORT)&=~_BV(LCD_DB2_PIN)
 #define lcd_db3_ddr_low() DDR(LCD_DB3_PORT)&=~_BV(LCD_DB3_PIN)
-#define lcd_db4_ddr_low() SetPinDir(LCD_DB4_PORT, LCD_DB4_PIN, 0)//DDR(LCD_DB4_PORT)&=~_BV(LCD_DB4_PIN)
-#define lcd_db5_ddr_low() SetPinDir(LCD_DB5_PORT, LCD_DB5_PIN, 0)//DDR(LCD_DB5_PORT)&=~_BV(LCD_DB5_PIN)
-#define lcd_db6_ddr_low() SetPinDir(LCD_DB6_PORT, LCD_DB6_PIN, 0)//DDR(LCD_DB6_PORT)&=~_BV(LCD_DB6_PIN)
-#define lcd_db7_ddr_low() SetPinDir(LCD_DB7_PORT, LCD_DB7_PIN, 0)//DDR(LCD_DB7_PORT)&=~_BV(LCD_DB7_PIN)
+#define lcd_db4_ddr_low() SetPinDir(LCD_DB4_PIN, 0)//DDR(LCD_DB4_PORT)&=~_BV(LCD_DB4_PIN)
+#define lcd_db5_ddr_low() SetPinDir(LCD_DB5_PIN, 0)//DDR(LCD_DB5_PORT)&=~_BV(LCD_DB5_PIN)
+#define lcd_db6_ddr_low() SetPinDir(LCD_DB6_PIN, 0)//DDR(LCD_DB6_PORT)&=~_BV(LCD_DB6_PIN)
+#define lcd_db7_ddr_low() SetPinDir(LCD_DB7_PIN, 0)//DDR(LCD_DB7_PORT)&=~_BV(LCD_DB7_PIN)
 
-#define lcd_rs_ddr_high() SetPinDir(LCD_RS_PORT, LCD_RS_PIN, 1)//DDR(LCD_RS_PORT)|=_BV(LCD_RS_PIN)
+#define lcd_rs_ddr_high() SetPinDir(LCD_RS_PIN, 1)//DDR(LCD_RS_PORT)|=_BV(LCD_RS_PIN)
 #if RW_LINE_IMPLEMENTED==1
-  #define lcd_rw_ddr_high() SetPinDir(LCD_RW_PORT, LCD_RW_PIN, 1)//DDR(LCD_RW_PORT)|=_BV(LCD_RW_PIN)
+  #define lcd_rw_ddr_high() SetPinDir(LCD_RW_PIN, 1)//DDR(LCD_RW_PORT)|=_BV(LCD_RW_PIN)
 #endif
 #define lcd_db0_ddr_high() DDR(LCD_DB0_PORT)|=_BV(LCD_DB0_PIN)
 #define lcd_db1_ddr_high() DDR(LCD_DB1_PORT)|=_BV(LCD_DB1_PIN)
 #define lcd_db2_ddr_high() DDR(LCD_DB2_PORT)|=_BV(LCD_DB2_PIN)
 #define lcd_db3_ddr_high() DDR(LCD_DB3_PORT)|=_BV(LCD_DB3_PIN)
-#define lcd_db4_ddr_high() SetPinDir(LCD_DB4_PORT, LCD_DB4_PIN, 1)//DDR(LCD_DB4_PORT)|=_BV(LCD_DB4_PIN)
-#define lcd_db5_ddr_high() SetPinDir(LCD_DB5_PORT, LCD_DB5_PIN, 1)//DDR(LCD_DB5_PORT)|=_BV(LCD_DB5_PIN)
-#define lcd_db6_ddr_high() SetPinDir(LCD_DB6_PORT, LCD_DB6_PIN, 1)//DDR(LCD_DB6_PORT)|=_BV(LCD_DB6_PIN)
-#define lcd_db7_ddr_high() SetPinDir(LCD_DB7_PORT, LCD_DB7_PIN, 1)//DDR(LCD_DB7_PORT)|=_BV(LCD_DB7_PIN)
+#define lcd_db4_ddr_high() SetPinDir(LCD_DB4_PIN, 1)//DDR(LCD_DB4_PORT)|=_BV(LCD_DB4_PIN)
+#define lcd_db5_ddr_high() SetPinDir(LCD_DB5_PIN, 1)//DDR(LCD_DB5_PORT)|=_BV(LCD_DB5_PIN)
+#define lcd_db6_ddr_high() SetPinDir(LCD_DB6_PIN, 1)//DDR(LCD_DB6_PORT)|=_BV(LCD_DB6_PIN)
+#define lcd_db7_ddr_high() SetPinDir(LCD_DB7_PIN, 1)//DDR(LCD_DB7_PORT)|=_BV(LCD_DB7_PIN)
 
 #define lcd_rs_ddr_set(value) if (value) lcd_rs_ddr_high(); else lcd_rs_ddr_low();
 #if RW_LINE_IMPLEMENTED==1
@@ -199,7 +199,7 @@ static inline void lcd_e_port_low()
       #endif
       default :
   #endif
-                WritePin(LCD_E_PORT, LCD_E_PIN, 0);
+                WritePin(LCD_E_PIN, 0);
 				//LCD_E_PORT&=~_BV(LCD_E_PIN);
   #if (LCD_DISPLAYS>1)
     }
@@ -223,7 +223,7 @@ static inline void lcd_e_port_high()
       #endif
       default :
   #endif
-				WritePin(LCD_E_PORT, LCD_E_PIN, 1);
+				WritePin(LCD_E_PIN, 1);
                 //LCD_E_PORT|=_BV(LCD_E_PIN);
   #if (LCD_DISPLAYS>1)
     }
@@ -247,7 +247,7 @@ static inline void lcd_e_ddr_low()
       #endif
       default :
   #endif		
-				SetPinDir(LCD_E_PORT, LCD_E_PIN, 0);
+				SetPinDir(LCD_E_PIN, 0);
                 //DDR(LCD_E_PORT)&=~_BV(LCD_E_PIN);
   #if (LCD_DISPLAYS>1)
     }
@@ -271,7 +271,7 @@ static inline void lcd_e_ddr_high()
       #endif
       default :
   #endif
-				SetPinDir(LCD_E_PORT, LCD_E_PIN, 1);
+				SetPinDir(LCD_E_PIN, 1);
                 //DDR(LCD_E_PORT)|=_BV(LCD_E_PIN);
   #if (LCD_DISPLAYS>1)
     }

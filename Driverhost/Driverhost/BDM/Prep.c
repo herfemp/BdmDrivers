@@ -238,13 +238,13 @@ void PrepT(){
 
 	// Kinda unstable but stupidly fast!
 	UBRR0L = 1; // 8 bits
-	UCSR0A |= (1 << U2X0);
+	UCSR0A = (1 << U2X0);
 
-
-	if(Systype > 2){
-		UBRR0L = 0;
-		UCSR0A |= (1 << U2X0);
-	}
+	
+//	if(Systype > 2){
+//		UBRR0L = 0;
+//		UCSR0A = 0;
+//	}
 
 	if(Systype != 3)
 		Exec_WriteCMD(0xFF, 0xFA21, WRITE8_BDM , 0, 0);		///< Kill watchdog

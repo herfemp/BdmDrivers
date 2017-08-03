@@ -197,7 +197,7 @@ void Exec_ReadCMD_s(uint16_t AddrH, uint16_t AddrL, uint16_t cmd){
 /* Hardware-assisted functions */ 
 inline uint8_t SendRecSPI2(uint8_t dt){
 
-	while(!(UCSR0A&(1<<UDRE0)))	;
+	// while(!(UCSR0A&(1<<UDRE0)))	;
 	UDR0 = dt;
 	while(!(UCSR0A&(1<<RXC0)))	;
 	
@@ -289,16 +289,16 @@ inline void Exec_FillCMD(uint16_t DataH, uint16_t DataL){
 // This one sends bytes in the wrong order
 inline void SendRecSPInoresp(uint16_t dt){
 
-	while(!(UCSR0A&(1<<UDRE0)))	;
+	// while(!(UCSR0A&(1<<UDRE0)))	;
 	UDR0 = dt&0xFF;
 	while(!(UCSR0A&(1<<RXC0)))	;
 	uint8_t temp = UDR0; // This register must be read..
 
 	dt >>= 8;
-	while(!(UCSR0A&(1<<UDRE0))) ;
+	// while(!(UCSR0A&(1<<UDRE0))) ;
 	UDR0 = dt&0xFF;
 	while(!(UCSR0A&(1<<RXC0)))	;
-	temp = UDR0; // This register must be read..
+	// temp = UDR0; // This register must be read..
 
 	return;
 	temp = temp; // Aaaand kill that annoying warning!
@@ -309,26 +309,28 @@ inline void ShiftData_p(const uint16_t *package){
 	UCSR0C = (1<<UMSEL01)|(1<<UMSEL00)|(1<<UCPHA0)|(1<<UCPOL0);
 	UCSR0B = (1<<RXEN0)|(1<<TXEN0);
 	SendRecSPInoresp(*package);
-	UCSR0C = 0;
-	UCSR0B = 0;
+	UCSR0C = UCSR0B = 0;
 }
 
 
 inline void SPInull(){
 
-	while(!(UCSR0A&(1<<UDRE0)))	;
+	// while(!(UCSR0A&(1<<UDRE0)))	;
 	UDR0 = 0;
 	while(!(UCSR0A&(1<<RXC0)))	;
 	uint8_t temp = UDR0; // This register must be read..
 
-	while(!(UCSR0A&(1<<UDRE0))) ;
+	// while(!(UCSR0A&(1<<UDRE0))) ;
 	UDR0 = 0;
 	while(!(UCSR0A&(1<<RXC0)))	;
-	temp = UDR0; // This register must be read..
+	// temp = UDR0; // This register must be read..
 
 	return;
 	temp = temp; // Aaaand kill that annoying warning!
 }
+
+// 2848
+// 2648
 // Store four bytes and let the ECU do the address-counting. Do not fetch response.
 inline void Exec_FillCMD_p(const uint16_t *data){
 
@@ -336,15 +338,16 @@ inline void Exec_FillCMD_p(const uint16_t *data){
 	ShiftData_p(&data[0]);
 	ShiftData_p(&data[1]);
 	
-	uint8_t done = 0;
-	do{	PORTD &=~(1<<4 | 1<<1);               // Pull down Clock and Data out
-		UCSR0C = (1<<UMSEL01)|(1<<UMSEL00)|(1<<UCPHA0)|(1<<UCPOL0);
-		UCSR0B = (1<<RXEN0)|(1<<TXEN0);                      // Enable SPI
-		if(!(PIND & _BV(0))) done = 1; // Attention-bit not set, abort loop and fetch our valuable data.
-		SPInull();                    // Clock out garbage
-		UCSR0C = 0;
-		UCSR0B = 0;                    // kill SPI
-	}while (!done);
+	PORTD &=~(1<<4 | 1<<1); // Pull down Clock and Data out
+
+	do{ EnSPI;
+		SPInull();           // Clock out garbage
+		UCSR0C = UCSR0B = 0; // kill SPI
+
+		PORTD &=~(1<<4 | 1<<1); // Pull down Clock and Data out
+		__asm("nop");
+//		__asm("nop");
+	}while ((PIND & _BV(0)));
 }
 
 inline void Exec_WriteCMD(uint16_t AddrH, uint16_t AddrL, uint16_t cmd, uint16_t DataH, uint16_t DataL){

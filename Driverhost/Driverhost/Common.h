@@ -63,35 +63,26 @@ void clrprintlcd(const char *s);
 void ShowAddr(uint8_t Had, uint16_t Lad);
 void showval(uint16_t val);
 
+#define F_CPU 16000000UL
+#define DSPLINES       2
+
 // PORTD
 #define P_RST  3, 2
 #define P_BKPT 3, 4
 #define P_FRZ  3, 7
 #define P_DSI  3, 1
 #define P_DSO  3, 0
+
 // PORTB
 #define SDCARD_CS_PORT 1
 #define SDCARD_CS_PIN  0
 
-
-
-#define F_CPU 16000000UL
-
 #define	MCP2515_CS_1   1,2
-#define	MCP2515_INT_1  B,1
 
-#define DSPLINES       2
+#define LCD_DB4_PIN    2, 0
+#define LCD_DB5_PIN    2, 1
+#define LCD_DB6_PIN    2, 2
+#define LCD_DB7_PIN    2, 3
 
-#define LCD_DB4_PORT   2
-#define LCD_DB5_PORT   2
-#define LCD_DB6_PORT   2
-#define LCD_DB7_PORT   2
-#define LCD_DB4_PIN    0
-#define LCD_DB5_PIN    1
-#define LCD_DB6_PIN    2
-#define LCD_DB7_PIN    3
-
-#define LCD_E_PORT     2
-#define LCD_RS_PORT    3
-#define LCD_E_PIN      5
-#define LCD_RS_PIN     3
+#define LCD_E_PIN      2, 5
+#define LCD_RS_PIN     3, 3

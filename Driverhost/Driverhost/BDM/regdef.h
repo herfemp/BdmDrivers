@@ -3,9 +3,9 @@
 
 
 ///< Trionic 8 CPU2 (MCP)
-uint16_t CMFIMCR_Enable_shadow;
-uint16_t CMFIMCR_Enable;
-uint16_t CMFIMCR_Stop;
+const uint16_t CMFIMCR_Enable_shadow;
+const uint16_t CMFIMCR_Enable;
+const uint16_t CMFIMCR_Stop;
 
 ///< CMFIMCR
 #define CMFIMCRAddr  0xF800

@@ -5,25 +5,19 @@
 // Benchmarks when flashing real data from file instead of 0-fill:
 // T5:
 // 39sf020  : (for 0 - 0x40000, ie half of the flash) 4,64 secs
-//  tn28f010: 8,48
-// cat28f010: 8,37
-//  am28f010: 8,95
+//  tn28f010: 8,21
+// cat28f010: 8,18
+//  am28f010: 8,62
 
-//  T7: 11,81
-//  T8: 25,43
+//  T7: 11,37
+//  T8: 22,32
 // MCP: 14,1 - 37,2 Secs.
 
 // Dump:
-// T5: 2.33 Secs (!)
-// T7: 4,68
-// t8: 7,85
+// T5: 2.35 Secs
+// T7: 4,61
+// t8: 6,92
 
-const uint16_t Flashsize[4] = {
-	   0,
-	 256,
-	 512,
-	1024
-};
 
 const char *fname[] = {
 	0,
@@ -73,7 +67,7 @@ int main(void){
 
 		if(f_open( &Fil, fname[Systype], FA_OPEN_EXISTING | FA_READ ) == FR_OK){
 
-			if(!Flash(Flashsize[Systype])){
+			if(!Flash(Systype<<8)){
 				lcd_puts("fail", 0);
 				ShowAddr(1, bdmresp16);
 				while(1){};
@@ -90,17 +84,17 @@ int main(void){
 		}
 	}
 	f_close(&Fil);
-
+	
 	sleep(2000);
 
 	// Hack hack..
 	uint8_t IndFault = 1;
-
+	
 	if (ResetTarget() && StopTarget()){
 		PrepT();
 	
 		if(Systype && Systype != 4)
-			IndFault = DumpFlash(Flashsize[Systype])?0:1;
+			IndFault = DumpFlash(Systype<<8)?0:1;
 		else
 			IndFault = 1;
 	}

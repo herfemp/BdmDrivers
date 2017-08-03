@@ -132,41 +132,77 @@ uint8_t Flash(uint16_t SizeK){
 #define nop3    __asm("nop\nnop\nnop");
 #define nop2    __asm("nop\nnop");
 
+// This routine is doing everything in the wrong order; by design (Except that it broke T8...)
+/*inline void ShiftWait_p(const uint8_t *data){
 
-// Quick routines for Jan; Dump binary.
-inline void ShiftWait_p(const uint8_t *data){
+	PORTD &=~(1<<4 | 1<<1);     // Pull down Clock and Data out
 
-	do{	PORTD &=~(1<<4 | 1<<1);     // Pull down Clock and Data out
-
-		nop3;
-		nop2;
-		nop2;
-
-		if(!(PIND & _BV(0))) break; // Attention-bit not set, abort loop and fetch our valuable data.
+	do{	EnSPI;   // Enable SPI
 		
-		EnSPI; // Enable SPI		
-
-		// Clock out 0's
+		SPINull; // Clock out 0's
+		*(uint8_t *)&data[0] = UDR0;
 		SPINull;
-		uint8_t temp = UDR0;
-		SPINull;
-		temp = UDR0;
-		temp = temp;
+		*(uint8_t *)&data[1] = UDR0;
 
 		UCSR0C = UCSR0B = 0; // Disable SPI
 
-	}while (1);
+		PORTD &=~(1<<4 | 1<<1); // Pull down Clock and Data out
 
-	EnSPI; // Enable SPI
-		
-	// Clock out 0's and fetch both bytes
-	SPINull;
-	*(uint8_t *)data++=UDR0;	
-	SPINull;
-	*(uint8_t *)data  =UDR0;
+	}while (PIND & _BV(0));
+}*/
 
-	UCSR0C = UCSR0B = 0; // Disable SPI
+/*
+inline void ShiftWait_p(const uint8_t *data){
+
+	uint8_t attn;
+
+	do{	PORTD &=~(1<<4 | 1<<1);     // Pull down Clock and Data out
+	
+		nop3;
+		nop3;
+		nop2;
+
+		attn = PIND & _BV(0);
+		EnSPI;   // Enable SPI
+
+		SPINull; // Clock out 0's
+		*(uint8_t *)&data[0] = UDR0;
+		SPINull;
+		*(uint8_t *)&data[1] = UDR0;
+
+		UCSR0C = UCSR0B = 0; // Disable SPI
+	}while (attn);
 }
+
+*/
+
+
+
+
+
+
+
+// 2763
+inline void ShiftWait_p(const uint8_t *data){
+
+	PORTD &=~(1<<4 | 1<<1);     // Pull down Clock and Data out
+	
+	nop3;
+
+	do{	EnSPI;   // Enable SPI
+		
+		SPINull; // Clock out 0's
+		*(uint8_t *)&data[0] = UDR0;
+		SPINull;
+		*(uint8_t *)&data[1] = UDR0;
+
+		UCSR0C = UCSR0B = 0; // Disable SPI
+
+		PORTD &=~(1<<4 | 1<<1); // Pull down Clock and Data out
+	}while (PIND & _BV(0));
+}
+
+
 
 // Let's break every rule possible to see how fast this tub can move
 inline void Exec_DumpCMD_p(const uint8_t *data){
@@ -185,19 +221,16 @@ inline void Exec_DumpCMD_p(const uint8_t *data){
 	UDR0 = DUMP32_BDM&0xFF;
 	while(!(UCSR0A&(1<<RXC0)))	;
 	// temp = UDR0;
-	
+	temp = temp;
+
 	// Disable SPI
 	UCSR0C = UCSR0B = 0;
 	
 	__asm("nop");
-
 	// We actually fetch words though we have to perform some tricks to circumvent hardware limitations
 	ShiftWait_p(&data[0]);
 	ShiftWait_p(&data[2]);
 
-
-	return ;
-	temp = temp;
 }
 
 
