@@ -4,7 +4,7 @@ These drivers are not complete and littered with bugs. Just functional enough to
 -:Flash:-
 
 T5:
-39sf020: 4,64 secs, tn28f010: 8,21, cat28f010: 8,18, am28f010: 8,62
+39sf020: 4,64 secs(Only 256K), tn28f010: 8,21, cat28f010: 8,18, am28f010: 8,62
 
 T7: 11,37, T8: 22,32, MCP: 14,1 - 37,2 Secs.
 
