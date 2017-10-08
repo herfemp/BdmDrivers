@@ -38,8 +38,13 @@ ifeq ($(OS),Windows_NT)
 	del ..\Driverhost\Driverhost\Drivers\TxDriver.bin.h
 	del ..\..\Thingy2.0\BDM\TxDriver.bin.h
 	copy TxDriver.bin.h ..\Driverhost\Driverhost\Drivers\TxDriver.bin.h
-	copy TxDriver.bin.h ..\..\Thingy2.0\BDM\TxDriver.bin.h
+	copy TxDriver.bin.h ..\..\Thingy2.0\BDM\Drivers\TxDriver.bin.h
 	del TxDriver.bin.h
+	del out\flash.o
+	del out\startup.o
+	printsize out\txdriver.bin
+	del out\TxDriver.bin
+
 
 else
 	@printf "#ifndef LOADER_BIN_H\n" > out/TxDriver.bin.h
