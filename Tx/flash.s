@@ -112,6 +112,9 @@ LWFlash:
     beq.b   Size128
     cmpi.w  #0xBFB6  , %d7 /* SST     020 */
     beq.b   Size256
+    cmpi.w  #0x0022  , %d7 /* AMD, T7/T8  */    
+    beq.b   Unicorns
+    
 # Atmel requires another routine
     moveq.l #3       , %d6
     cmpi.w  #0x1F5D  , %d7 /* Atmel   512 */
@@ -120,15 +123,10 @@ LWFlash:
     beq.b   Size128
     cmpi.w  #0x1FDA  , %d7 /* Atmel   020 */
     beq.b   Size256
-    
-    # -:hacks:-
-    moveq.l #2       , %d6
-    cmpi.w  #0x0022  , %d7 /* AMD, T7/T8  */
-    bne.b   UnkFlash    
+    bra.b   UnkFlash    
 
-    moveq.l #16      , %d5
-    #2281 T8
 Unicorns:
+    moveq.l #16      , %d5
     cmpi.w  #0x2281  , %d3 /* Trionic 8 */
     beq.b   Size256
     cmpi.w  #0x2223  , %d3 /* Trionic 7 */
@@ -149,6 +147,7 @@ Size256:
 ID_Match:
     swap    %d5
     movea.l %d5      , %a1
+    movea.l #0xAAAA  , %a2
 bgnd
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -178,7 +177,7 @@ WriteLoopAt:
     movea.l %a0      , %a3 
     movea.l %a1      , %a4 
     move.w  %d3      , %d0
-    
+
 CheckLAtW: 
     cmpm.w  (%a4)+   ,(%a3)+
     bne.b   NotIdentAtW
@@ -186,7 +185,7 @@ CheckLAtW:
 
     movea.l %a3      , %a0
     movea.l %a4      , %a1
-    
+
     sub.w   %d3      , %d1
     subq.w  #1       , %d1      
     beq.b   WriteAtDone
@@ -196,12 +195,12 @@ NotIdentAtW:
     movea.l %a0      , %a3
     movea.l %a1      , %a4
     move.w  %d3      , %d0 
-    
+
 # Unlock
     move.w  %a2      ,(%a2)
     move.w  #0x5555  ,(0x5554)
     move.w  #0xA0A0  ,(%a2)
-    
+
 WritePageAT:
     move.w  (%a4)+   ,(%a3)+
     dbra    %d0, WritePageAT
@@ -234,22 +233,21 @@ FormatFlashNEW:
     move.w  %a2      ,(%a2)
     move.w  #0x5555  ,(0x5554)
     move.w  #0x8080  ,(%a2)
-    
+
     move.w  %a2      ,(%a2)
     move.w  #0x5555  ,(0x5554)
     move.w  #0x1010  ,(%a2)
-    
 
 ToggleWait:
     move.w  (%a0)    , %d2
     cmp.w   (%a0)    , %d2   
     bne.b   ToggleWait
+    bra.b   FormatFlashNEW
     
 DataIdentToggle:
     addq.l  #2       , %a0
     cmpa.l  %a1      , %a0      
     bcs.b   FormatFlashNEW
-    
     moveq.l #1       , %d0
 bgnd
 
@@ -307,38 +305,6 @@ DataIdentAtE:
     bsr.w   Delay
     moveq.l #1, %d0
 bgnd
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -517,10 +483,6 @@ WriteBuffer:
     
     cmpi.w  #1       , %d6  
     beq.w   WriteBufferOLD
-    
-    # Prestore a command that is used by both
-    movea.l #0xAAAA  , %a2
-    
     cmpi.w  #2       , %d6  
     beq.w   WriteBufferNEW  
     cmpi.w  #3       , %d6      
@@ -535,14 +497,10 @@ FormatFlash:
     
     cmpi.w  #1       , %d6
     beq.w   FormatFlashOLD
-    
-    # Prestore a command that is used by both
-    movea.l #0xAAAA  , %a2
-
     cmpi.w  #2       , %d6   
     beq.w   FormatFlashNEW      
     cmpi.w  #3       , %d6
-    bra.w   FormatFlashAtmel  
+    beq.w   FormatFlashAtmel  
 
 NiceTry:
     bsr.w   Delay
