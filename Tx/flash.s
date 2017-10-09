@@ -65,7 +65,7 @@ Syscfg:
     cmp.w   %d3      , %d7
     beq.b   TryHW          /* Try H/W if same val is read */
     move.b  (%a5)    , %d7 /* Copy dev ID                 */
-    move.w  (%a5)    , %d3
+    move.w  (%a5)    , %d3 /* Store a full copy of addr 2 */
     move.w  %a2      ,(%a2)
     move.w  %d4      ,(0x5554)
     move.w  #0xF0F0  ,(%a2)
@@ -75,7 +75,7 @@ Syscfg:
     bsr.b   Delay
     bsr.b   Delay
     moveq.l #2       , %d6 /* Ind toggle-flash */
-    bra.b   DoneID 
+    bra.w   LWFlash 
 
 Delay:
 	move.w  #0x1800  , %d2
@@ -97,11 +97,7 @@ TryHW:
     cmp.w   %d3      , %d7
     beq.w   UnkFlash
     move.b  (%a5)    , %d7  /* Cpy dev id / ntr read */
-    clr.w   -(%a5)
-
-DoneID:
-    cmpi.b  #1       , %d6
-    bne.b   LWFlash
+    clr.w   -(%a5)          /* Enter read mode       */
 
 # # # H/W flash # # # # # # # # #
 
@@ -127,6 +123,7 @@ LWFlash:
     moveq.l #8       , %d5 /* Prepare size as 0x80000  */
     move.w  %d7      , %d1 /* Store another copy of ID */
     lsr.w   %d5      , %d1 /* Shift down manuf ID      */
+
 # Class 29 flash  
     cmpi.b  #0x01    , %d1 /* AMD         */
     beq.b   Class29
@@ -152,9 +149,9 @@ LWFlash:
     beq.b   Size256
     cmpi.w  #0x0022  , %d7 /* AMD, T7/T8  */    
     beq.b   Unicorns
-    
-# Atmel requires another routine
-    moveq.l #3       , %d6
+
+# Atmel
+    moveq.l #3       , %d6 /* Change drv  */
     cmpi.w  #0x1F5D  , %d7 /* Atmel   512 */
     beq.b   Size64    
     cmpi.w  #0x1FD5  , %d7 /* Atmel   010 */
@@ -164,11 +161,11 @@ LWFlash:
     bra.b   UnkFlash    
 
 Unicorns:
-    moveq.l #16      , %d5
-    cmpi.w  #0x2281  , %d3 /* Trionic 8 */
-    beq.b   Size256
-    cmpi.w  #0x2223  , %d3 /* Trionic 7 */
+    moveq.l #16      , %d5 /* 256 B = 1 M */
+    cmpi.w  #0x2223  , %d3 /* Trionic 7   */
     beq.b   Size128
+    cmpi.w  #0x2281  , %d3 /* Trionic 8   */
+    beq.b   Size256
     bra.b   UnkFlash
 Class29:
     cmpi.b  #0x21    , %d7
@@ -176,7 +173,8 @@ Class29:
     cmpi.b  #0x20    , %d7
     beq.b   Size128
 UnkFlash:
-    clr.l   %d0 /* Indicate fault */
+    clr.l   %d6 /* Make sure no driver is selected */
+    clr.l   %d0 /* Indicate fault                  */
 Size64:
     lsr.w   #1       , %d5
 Size128:
