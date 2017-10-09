@@ -1,7 +1,45 @@
-.global Syscfg
-.global FormatFlash
-.global WriteBuffer
-.global NiceTry
+
+	movea.l #0x100800,%sp /* Reset stack pointer */
+	
+	cmpi.b  #1, %d0
+	beq.b   WriteBuffer	
+	cmpi.b  #2, %d0
+	beq.b   FormatFlash	
+	cmpi.b  #3, %d0
+	beq.b   Syscfg
+    bra.b   NiceTry
+
+WriteBuffer:
+
+    # Store buffer location
+    # Store number of WORDS to write
+    movea.l #0x100000, %a1
+    move.w  #512     , %d1
+    
+    cmpi.w  #1       , %d6  
+    beq.w   WriteBufferOLD
+    cmpi.w  #2       , %d6  
+    beq.w   WriteBufferNEW  
+    cmpi.w  #3       , %d6      
+    beq.w   WriteBufferAtmel
+    bra.b   NiceTry
+    
+FormatFlash:
+
+    # Start from address 0
+    suba.l  %a0      , %a0
+    
+    cmpi.w  #1       , %d6
+    beq.w   FormatFlashOLD
+    cmpi.w  #2       , %d6   
+    beq.w   FormatFlashNEW      
+    cmpi.w  #3       , %d6
+    beq.w   FormatFlashAtmel  
+
+NiceTry:
+    bsr.w   Delay
+    clr.l   %d0
+bgnd
 
 Syscfg: 
 
@@ -147,7 +185,6 @@ Size256:
 ID_Match:
     swap    %d5
     movea.l %d5      , %a1
-    movea.l #0xAAAA  , %a2
 bgnd
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -156,6 +193,62 @@ bgnd
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# Could never get the damn erase command to work.
+# We'll use Atmel's weird page write feature instead
+FormatFlashAtmel:
+/*
+    # Check for 29c020 since that requires a larger pagebuf
+    # moveq.l #63      , %d3
+    # cmpi.w  #0x1FDA  , %d7
+    # bne.b   FormatLoopAt
+    moveq.l #127     , %d3
+    
+FormatLoopAt:
+
+    movea.l %a0      , %a3
+    move.l  %d3      , %d0   
+CheckE: 
+    cmpi.w  #0xFFFF  ,(%a3)+
+    bne.b   NotIdentAtE
+    dbra    %d0,      CheckE
+
+    movea.l %a3      , %a0
+    bra.b   DataIdentAtE
+
+NotIdentAtE:
+
+    movea.l %a0      , %a3
+    move.l  %d3      , %d0 
+ 
+# Unlock
+    move.w  %a2      ,(%a2)
+    move.w  #0x5555  ,(0x5554)
+    move.w  #0xA0A0  ,(%a2)
+  
+ErasePageAT:
+    move.w  #0xFFFF  ,(%a3)+
+    dbra    %d0, ErasePageAT
+
+    # bsr.w  Delay
+    # bsr.w  Delay
+    # bsr.w  Delay
+    
+AtmelWaitE:                   	
+    move.w  (%a0)    , %d0
+    cmp.w   (%a0)    , %d0
+    bne.b   AtmelWaitE 
+     
+DataIdentAtE:
+    cmpa.l  %a1      , %a0      
+    bcs.b   FormatLoopAt
+    */
+    bsr.w   Delay
+    moveq.l #1, %d0
+bgnd
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -224,7 +317,6 @@ bgnd
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-
 FormatFlashNEW:
         
     cmpi.w  #0xFFFF  ,(%a0)
@@ -249,61 +341,6 @@ DataIdentToggle:
     cmpa.l  %a1      , %a0      
     bcs.b   FormatFlashNEW
     moveq.l #1       , %d0
-bgnd
-
-
-
-# Could never get the damn erase command to work.
-# We'll use Atmel's weird page write feature instead
-FormatFlashAtmel:
-/*
-    # Check for 29c020 since that requires a larger pagebuf
-    # moveq.l #63      , %d3
-    # cmpi.w  #0x1FDA  , %d7
-    # bne.b   FormatLoopAt
-    moveq.l #127     , %d3
-    
-FormatLoopAt:
-
-    movea.l %a0      , %a3
-    move.l  %d3      , %d0   
-CheckE: 
-    cmpi.w  #0xFFFF  ,(%a3)+
-    bne.b   NotIdentAtE
-    dbra    %d0,      CheckE
-
-    movea.l %a3      , %a0
-    bra.b   DataIdentAtE
-
-NotIdentAtE:
-
-    movea.l %a0      , %a3
-    move.l  %d3      , %d0 
- 
-# Unlock
-    move.w  %a2      ,(%a2)
-    move.w  #0x5555  ,(0x5554)
-    move.w  #0xA0A0  ,(%a2)
-  
-ErasePageAT:
-    move.w  #0xFFFF  ,(%a3)+
-    dbra    %d0, ErasePageAT
-
-    # bsr.w  Delay
-    # bsr.w  Delay
-    # bsr.w  Delay
-    
-AtmelWaitE:                   	
-    move.w  (%a0)    , %d0
-    cmp.w   (%a0)    , %d0
-    bne.b   AtmelWaitE 
-     
-DataIdentAtE:
-    cmpa.l  %a1      , %a0      
-    bcs.b   FormatLoopAt
-    */
-    bsr.w   Delay
-    moveq.l #1, %d0
 bgnd
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -384,8 +421,8 @@ dataident:
     clr.w   (%a0)
 bgnd
 
-# # # # # # # # # # # #
-# # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 Delay_10uS:
     moveq.l #15      , %d3
 us10loop:
@@ -398,8 +435,8 @@ us6loop:
 	subq.l  #1       , %d3
 	bne.b   us6loop
 rts
-# # # # # # # # # # # #
-# # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
    
 FormatFlashOLD:
 
@@ -473,40 +510,8 @@ bgnd
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #        
-                         
-WriteBuffer:
 
-    # Store buffer location
-    # Store number of WORDS to write
-    movea.l #0x100000, %a1
-    move.w  #512     , %d1
-    
-    cmpi.w  #1       , %d6  
-    beq.w   WriteBufferOLD
-    cmpi.w  #2       , %d6  
-    beq.w   WriteBufferNEW  
-    cmpi.w  #3       , %d6      
-    beq.w   WriteBufferAtmel
-    
-    bra.b   NiceTry
-    
-FormatFlash:
-
-    # Start from address 0
-    suba.l  %a0      , %a0
-    
-    cmpi.w  #1       , %d6
-    beq.w   FormatFlashOLD
-    cmpi.w  #2       , %d6   
-    beq.w   FormatFlashNEW      
-    cmpi.w  #3       , %d6
-    beq.w   FormatFlashAtmel  
-
-NiceTry:
-    bsr.w   Delay
-    clr.l   %d0
-bgnd
-
+.align 4
 # Table for H/V flash:
 # # # # # # # # AMD , Other guys
 HVT:      .byte 0x25, 0xB8 /*  64 K (T5.2) */

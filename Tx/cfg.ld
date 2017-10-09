@@ -1,4 +1,3 @@
-STARTUP(out/startup.o)
 OUTPUT_FORMAT("binary")
 OUTPUT_ARCH(m68k)
 

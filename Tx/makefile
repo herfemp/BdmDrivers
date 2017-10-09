@@ -21,10 +21,7 @@ else
    endif
 endif
 
-all:  out/startup.o out/TxDriver.bin 
-
-out/startup.o: startup.s
-	$(AS) $(ASFLAGS)  $< -o $@
+all:  out/TxDriver.bin 
 
 out/flash.o: flash.s
 	$(AS) $(ASFLAGS)  $< -o $@
