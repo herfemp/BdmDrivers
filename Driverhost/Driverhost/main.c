@@ -103,7 +103,7 @@ int main(void){
 	// Disable SPI to allow for regular toggling of gpio
 	SPCR = 0;
 
-	// ResetTarget();
+	ResetTarget();
 	while (1){
 	
 		sleep(250);

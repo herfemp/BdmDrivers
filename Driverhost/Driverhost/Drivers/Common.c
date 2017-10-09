@@ -151,8 +151,7 @@ uint8_t Flash(uint16_t SizeK){
 	}while (PIND & _BV(0));
 }*/
 
-/*
-inline void ShiftWait_p(const uint8_t *data){
+/*inline void ShiftWait_p(const uint8_t *data){
 
 	uint8_t attn;
 
@@ -172,22 +171,13 @@ inline void ShiftWait_p(const uint8_t *data){
 
 		UCSR0C = UCSR0B = 0; // Disable SPI
 	}while (attn);
-}
+}*/
 
-*/
-
-
-
-
-
-
-
-// 2763
+// This routine is doing everything in the wrong order; by design (Oh and T8 works)
 inline void ShiftWait_p(const uint8_t *data){
 
 	PORTD &=~(1<<4 | 1<<1);     // Pull down Clock and Data out
-	
-	nop3;
+	nop3; // Required by T8
 
 	do{	EnSPI;   // Enable SPI
 		
@@ -201,8 +191,6 @@ inline void ShiftWait_p(const uint8_t *data){
 		PORTD &=~(1<<4 | 1<<1); // Pull down Clock and Data out
 	}while (PIND & _BV(0));
 }
-
-
 
 // Let's break every rule possible to see how fast this tub can move
 inline void Exec_DumpCMD_p(const uint8_t *data){
@@ -226,40 +214,36 @@ inline void Exec_DumpCMD_p(const uint8_t *data){
 	// Disable SPI
 	UCSR0C = UCSR0B = 0;
 	
-	__asm("nop");
+	__asm("nop"); // Required by T5 and T7
+
 	// We actually fetch words though we have to perform some tricks to circumvent hardware limitations
 	ShiftWait_p(&data[0]);
 	ShiftWait_p(&data[2]);
 
 }
 
-
+// T5: 1381
+// 1310
 uint8_t DumpFlash(uint16_t SizeK){
 
-	BenchTime = 65535;
-
-	uint16_t checksum16 = 0;
-	uint8_t  cntr       = 0;
-
-	SizeK <<= 2; // Multiply by four; We dump in chunks of 256 bytes
+	uint16_t Checksum16;
+	BenchTime     = 65535;
+	uint8_t  cntr =     4;
+	SizeK       <<=     2; // Multiply by four; We dump in chunks of 256 bytes
 
 	if(f_open(&Fil, "New.bin", FA_WRITE | FA_CREATE_ALWAYS) != FR_OK)
 		return 0;
 
 	// Read four bytes.
 	Exec_ReadCMD_workaround(0,0, READ32_BDM);
-	*(uint16_t *) &Fbuf[cntr++] = bdmresp32<<8 | bdmresp32>>8;
-	*(uint16_t *) &Fbuf[++cntr] = bdmresp16<<8 | bdmresp16>>8;
-	checksum16 += Fbuf[0] + Fbuf[1] + Fbuf[2] + Fbuf[3];
+	*(uint16_t *) &Fbuf[0] = bdmresp32<<8 | bdmresp32>>8;
+	*(uint16_t *) &Fbuf[2] = bdmresp16<<8 | bdmresp16>>8;
+	Checksum16   = Fbuf[0] + Fbuf[1] + Fbuf[2] + Fbuf[3];
 
-	// Increment by two for every copy to the byte-array.
-	cntr += 2;
-
-	do{ // Fill buffer with 256 bytes
-		do{ Exec_DumpCMD_p(&Fbuf[cntr]);
-			checksum16 += Fbuf[cntr] + Fbuf[cntr+1] + Fbuf[cntr+2] + Fbuf[cntr+3];
-			cntr +=4;
-		}while(cntr);
+	// Fill buffer with 256 bytes
+	do{ do{ Exec_DumpCMD_p(&Fbuf[cntr]);
+			Checksum16 += Fbuf[cntr] + Fbuf[cntr+1] + Fbuf[cntr+2] + Fbuf[cntr+3];
+		}while(cntr+=4);
 
 		if(f_write(&Fil, &Fbuf, 256, &bw)!=FR_OK)
 			return 0;
@@ -268,6 +252,7 @@ uint8_t DumpFlash(uint16_t SizeK){
 	}while(--SizeK);
 
 	showval(65535 - BenchTime);
-	ShowAddr(0, checksum16);
+	ShowAddr(0, Checksum16);
+
 	return 1;
 }

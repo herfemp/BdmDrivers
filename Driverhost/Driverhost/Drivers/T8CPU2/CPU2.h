@@ -12,7 +12,7 @@ const uint16_t mcploaderbytes = sizeof(driver_bin);
 #define LDRSucc 1
 #define LDRFail 0
 
-const uint16_t CMFIMCR_Enable_shadow = (
+const uint16_t CMFIMCR_Enable_shadow PROGMEM = (
 //	0<<15 | // stop
 //	0<<14 | // protect
 	1<<13 | // SIE (Shadow information enable)

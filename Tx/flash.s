@@ -51,11 +51,12 @@ Syscfg:
     movea.l #0xFFFC14, %a0
     movea.l #0xAAAA  , %a2
     suba.l  %a5      , %a5
+    movea.l #0x5554  , %a6
 
     # Make a copy of address 0 and Send ID CMD for L/W flash
     move.w  (%a5)    , %d3
     move.w  %a2      ,(%a2)
-    move.w  %d4      ,(0x5554)
+    move.w  %d4      ,(%a6)
     move.w  #0x9090  ,(%a2)
     
     bsr.b   Delay
@@ -67,7 +68,7 @@ Syscfg:
     move.b  (%a5)    , %d7 /* Copy dev ID                 */
     move.w  (%a5)    , %d3 /* Store a full copy of addr 2 */
     move.w  %a2      ,(%a2)
-    move.w  %d4      ,(0x5554)
+    move.w  %d4      ,(%a6)
     move.w  #0xF0F0  ,(%a2)
     bsr.b   Delay
     bsr.b   Delay
@@ -102,7 +103,7 @@ TryHW:
 # # # H/W flash # # # # # # # # #
 
     lea     HVT      , %a0 /* Address of id table */
-    moveq.l #3       , %d3 /* 3 sizes */
+    moveq.l #3       , %d3 /* 3 sizes     */
     moveq.l #2       , %d5
    
 NextSize:
@@ -112,7 +113,7 @@ HVtstL:
     beq.w   ID_Match
     dbra    %d2, HVtstL
     
-    lsl.w   #1       , %d5 /* double size  */
+    lsl.w   #1       , %d5 /* double size */
     subq.b  #1       , %d3
     bne.b   NextSize
     bra.b   UnkFlash
@@ -183,6 +184,8 @@ Size256:
 ID_Match:
     swap    %d5
     movea.l %d5      , %a1
+    clr.l   %d5
+    subq.l  #1       , %d5
 bgnd
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -209,7 +212,7 @@ FormatLoopAt:
     movea.l %a0      , %a3
     move.l  %d3      , %d0   
 CheckE: 
-    cmpi.w  #0xFFFF  ,(%a3)+
+    cmp.w   %d5      ,(%a3)+
     bne.b   NotIdentAtE
     dbra    %d0,      CheckE
 
@@ -223,11 +226,11 @@ NotIdentAtE:
  
 # Unlock
     move.w  %a2      ,(%a2)
-    move.w  #0x5555  ,(0x5554)
+    move.w  %d4      ,(%a6)
     move.w  #0xA0A0  ,(%a2)
   
 ErasePageAT:
-    move.w  #0xFFFF  ,(%a3)+
+    move.w  %d5      ,(%a3)+
     dbra    %d0, ErasePageAT
 
     # bsr.w  Delay
@@ -289,7 +292,7 @@ NotIdentAtW:
 
 # Unlock
     move.w  %a2      ,(%a2)
-    move.w  #0x5555  ,(0x5554)
+    move.w  %d4      ,(%a6)
     move.w  #0xA0A0  ,(%a2)
 
 WritePageAT:
@@ -317,15 +320,15 @@ bgnd
 
 FormatFlashNEW:
         
-    cmpi.w  #0xFFFF  ,(%a0)
+    cmp.w   (%a0)    , %d5
     beq.b   DataIdentToggle
     
     move.w  %a2      ,(%a2)
-    move.w  #0x5555  ,(0x5554)
+    move.w  %d4      ,(%a6)
     move.w  #0x8080  ,(%a2)
 
     move.w  %a2      ,(%a2)
-    move.w  #0x5555  ,(0x5554)
+    move.w  %d4      ,(%a6)
     move.w  #0x1010  ,(%a2)
 
 ToggleWait:
@@ -349,7 +352,7 @@ WriteBufferNEW:
     cmpm.w  (%a0)+   ,(%a1)+
     beq.b   ToggleIdent      
     move.w  %a2      ,(%a2)
-    move.w  #0x5555  ,(0x5554)
+    move.w  %d4      ,(%a6)
     move.w  #0xA0A0  ,(%a2)
     move.w  -(%a1)   ,-(%a0)
 
@@ -467,10 +470,9 @@ OOisOO:
     # -:Format flash:-
     move.w  #1000    , %d0 /* Maximum number of tries */
     move.w  #0x2020  , %d1
-    move.w  #0xFFFF  , %d2
 
 FFloop:                     
-    cmp.w   (%a0)+   , %d2
+    cmp.w   (%a0)+   , %d5
     beq.b   DataisFF
     move.w  %d1      ,-(%a0)
     move.w  %d1      ,(%a0)
@@ -485,7 +487,7 @@ mSloop:
 
     move.w  #0xA0A0  ,(%a0)
     bsr.b   Delay_6uS            
-    cmp.w   (%a0)    , %d2
+    cmp.w   (%a0)    , %d5
     bne.b   DecFF
     clr.w   (%a0)        
     bra.b   FFloop
