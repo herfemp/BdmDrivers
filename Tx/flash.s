@@ -162,7 +162,7 @@ LWFlash:
     bra.b   UnkFlash    
 
 Unicorns:
-    moveq.l #16      , %d5 /* 256 B = 1 M */
+    moveq.l #16      , %d5 /* 256 K = 1 M */
     cmpi.w  #0x2223  , %d3 /* Trionic 7   */
     beq.b   Size128
     cmpi.w  #0x2281  , %d3 /* Trionic 8   */
