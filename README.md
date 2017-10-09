@@ -14,7 +14,5 @@ T7: 11,37, T8: 22,32, MCP: 14,1 - 37,2 Secs.
 
 T5: 2.35 Secs, T7: 4,61, t8: 6,92
 
-I know with 100% certainty these times can be improved if you copy and paste some code from T5Legion. I'm just lazy :)
-
 If you build one of these yourself, make sure to use GOOD cables and they must also be short. Regular jumpercables are not good enough.
 I'm pretty much pushing every limit there is so the slightest interference is enough to throw the host off. This is especially true on Trionic 8 and MCP since it goes full blast, 8 MHz, on the SPI interface. (Yep, SPI is used in a weird way to implement BDM)
