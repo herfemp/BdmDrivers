@@ -1,4 +1,67 @@
+# Universal bdm driver
 
+# Usage:
+# Setup TPURAM or SRAM to 0x100000 ( Preferably the first since it's way faster )
+# Initialize CSPAR and all that stuff to base flash @ address 0
+# Initialize clock
+# if Trionic 5, 16,7 MHz is a must when equipped with original flash (Delays are calibrated for that)
+# If They have toggle-flash just go for 20 MHz. Motorola overengineered the crap out of these so no need to chickenshit on 16 MHz ECU's
+# Trionic 7 is locked to an external clock of 16 MHZ.
+# Trionic 8 can be run @ 32 MHz
+
+#######
+# Init:
+
+# Upload driver to 0x100400
+# Store 3 in register D0, (This tells the driver to initialize stuff)
+# Set PC to 0x100400
+# Start it
+
+# When it enters bdm again:
+# Read D0, If it's 1 everything is OK, if not 1 _ABORT_!
+# D7 contains manufacturer and device ID
+# D3 contains extended ID (Trionic 7 and 8)
+# D6 contains which type of flash (1 Trionic 5 stock flash, 2 toggle flash, 3 Atmel)
+# A1 contains size of flash (Store this value now)
+
+# Really useful on Trionic 5 since you only have to make sure selected file is equal in size or smaller
+# Set up a loop that divides size by file size to flash everything
+# (You can also bump the clock here if D6 is higher than 1 on Trionic 5)
+
+########
+# Erase:
+
+# Store 2 in register D0, (This tells the driver to format flash)
+# Set PC to 0x100400
+# Start it
+
+# When it enters bdm again:
+# Read D0, If it's 1 everything is OK, if not 1 _ABORT_!
+# A0 contains last address that was worked on (Only useful if something went wrong and you want to know where)
+
+########
+# Write:
+
+# If previous command went ok you already have the right value in D0
+# Write 0 to A0
+
+# -:"loop":-
+# Upload 1024 bytes starting from 0x100000
+# Set PC to 0x100400
+# Start it
+
+# When it enters bdm again:
+# Read D0.
+# If 1, repeat loop. ( A0 autoincrements and D0 already is 1 )
+# If 0, something went wrong. _ABORT_
+
+# One last word about toggle-flash:
+# No, I'm _NOT_ going to implement the error-toggle used by AMD since I'd need another method on T7/T8!
+# Just use a timer to detect if the driver gets stuck. Nothing can be done anyway..
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 	movea.l #0x100800,%sp /* Reset stack pointer */
 	
 	cmpi.b  #1, %d0
@@ -37,21 +100,23 @@ FormatFlash:
     beq.w   FormatFlashAtmel  
 
 NiceTry:
-    bsr.w   Delay
+    bsr.b   Delay
     clr.l   %d0
 bgnd
 
 Syscfg: 
 
     # This abomination requires further work..    
-    moveq.l #1       , %d0
-    moveq.l #0x40    , %d1
-    move.w  #0x5555  , %d4
-
+    moveq.l #1       , %d0  /* Presume result to be ok   */
+    
+    moveq.l #0x40    , %d1  /* Used for H/W on Trionic 5 */
     movea.l #0xFFFC14, %a0
+
+    move.w  #0x5555  , %d4  /* Used by L/W flsh routines */
     movea.l #0xAAAA  , %a2
-    suba.l  %a5      , %a5
     movea.l #0x5554  , %a6
+
+    suba.l  %a5      , %a5  /* Reset pointer to addr 0   */
 
     # Make a copy of address 0 and Send ID CMD for L/W flash
     move.w  (%a5)    , %d3
@@ -64,10 +129,10 @@ Syscfg:
     # Make a new copy of address 0 and compare
     move.w  (%a5)+   , %d7
     cmp.w   %d3      , %d7
-    beq.b   TryHW          /* Try H/W if same val is read */
-    move.b  (%a5)    , %d7 /* Copy dev ID                 */
-    move.w  (%a5)    , %d3 /* Store a full copy of addr 2 */
-    move.w  %a2      ,(%a2)
+    beq.b   TryHW            /* Try H/W if same val is read */
+    move.b  (%a5)    , %d7   /* Copy dev ID                 */
+    move.w  (%a5)    , %d3   /* Store a full copy of addr 2 */
+    move.w  %a2      ,(%a2)  /* Reset flash                 */
     move.w  %d4      ,(%a6)
     move.w  #0xF0F0  ,(%a2)
     bsr.b   Delay
@@ -75,35 +140,35 @@ Syscfg:
     bsr.b   Delay
     bsr.b   Delay
     bsr.b   Delay
-    moveq.l #2       , %d6 /* Ind toggle-flash */
+    moveq.l #2       , %d6   /* Ind toggle-flash */
     bra.w   LWFlash 
 
 Delay:
 	move.w  #0x1800  , %d2
 Dloop:
-	dbra    %d2, Dloop /* %d2 becomes 0xFFFF */
+	dbra    %d2,     Dloop   /* %d2 becomes 0xFFFF */
 rts
 
     # Same data read, trying H/W flash
 TryHW:
-    moveq.l #1       , %d6   /* Ind old flash        */
-    move.w  %d1      ,(%a0)+ /* Latching up H/W      */
+    moveq.l #1       , %d6   /* Ind old flash         */
+    move.w  %d1      ,(%a0)+ /* Latching up H/W       */
     or.w    %d1      ,(%a0)
     bsr.b   Delay
-    move.w  %d2      ,-(%a5) /* Reset flash          */
+    move.w  %d2      ,-(%a5) /* Reset flash           */
     move.w  %d2      ,(%a5)
     bsr.b   Delay
-    move.w  #0x9090  ,(%a5) /* Send ID CMD, H/W flsh */
-    move.w  (%a5)+   , %d7  /* Make a new copy n cmp */
+    move.w  #0x9090  ,(%a5)  /* Send ID CMD, H/W flsh */
+    move.w  (%a5)+   , %d7   /* Make a new copy n cmp */
     cmp.w   %d3      , %d7
     beq.w   UnkFlash
-    move.b  (%a5)    , %d7  /* Cpy dev id / ntr read */
-    clr.w   -(%a5)          /* Enter read mode       */
+    move.b  (%a5)    , %d7   /* Cpy dev id / ntr read */
+    clr.w   -(%a5)
 
 # # # H/W flash # # # # # # # # #
 
-    lea     HVT      , %a0 /* Address of id table */
-    moveq.l #3       , %d3 /* 3 sizes     */
+    lea     HVT      , %a0   /* Address of id table */
+    moveq.l #3       , %d3   /* 3 sizes     */
     moveq.l #2       , %d5
    
 NextSize:
@@ -113,7 +178,7 @@ HVtstL:
     beq.w   ID_Match
     dbra    %d2, HVtstL
     
-    lsl.w   #1       , %d5 /* double size */
+    lsl.w   #1       , %d5   /* double size */
     subq.b  #1       , %d3
     bne.b   NextSize
     bra.b   UnkFlash
@@ -121,51 +186,51 @@ HVtstL:
 # # # L/W flash # # # # # # # # #    
     
 LWFlash:
-    moveq.l #8       , %d5 /* Prepare size as 0x80000  */
-    move.w  %d7      , %d1 /* Store another copy of ID */
-    lsr.w   %d5      , %d1 /* Shift down manuf ID      */
+    moveq.l #8       , %d5   /* Prepare size as 0x80000  */
+    move.w  %d7      , %d1   /* Store another copy of ID */
+    lsr.w   %d5      , %d1   /* Shift down manuf ID      */
 
 # Class 29 flash  
-    cmpi.b  #0x01    , %d1 /* AMD         */
+    cmpi.b  #0x01    , %d1   /* AMD         */
     beq.b   Class29
-    cmpi.b  #0x20    , %d1 /* ST          */
+    cmpi.b  #0x20    , %d1   /* ST          */
     beq.b   Class29 
-    cmpi.b  #0x1C    , %d1 /* EON         */
+    cmpi.b  #0x1C    , %d1   /* EON         */
     beq.b   Class29 
-    cmpi.w  #0x37A4  , %d7 /* AMIC    010 */
+    cmpi.w  #0x37A4  , %d7   /* AMIC    010 */
     beq.b   Size128
 
 # Class 39 flash
-    cmpi.w  #0xDAA1  , %d7 /* Winbond 010 */
+    cmpi.w  #0xDAA1  , %d7   /* Winbond 010 */
     beq.b   Size128
-    cmpi.w  #0x9D1C  , %d7 /* PMC     010 */
+    cmpi.w  #0x9D1C  , %d7   /* PMC     010 */
     beq.b   Size128
-    cmpi.w  #0x9D4D  , %d7 /* PMC     020 */
+    cmpi.w  #0x9D4D  , %d7   /* PMC     020 */
     beq.b   Size256
-    cmpi.w  #0xBFB4  , %d7 /* SST     512 */
+    cmpi.w  #0xBFB4  , %d7   /* SST     512 */
     beq.b   Size64
-    cmpi.w  #0xBFB5  , %d7 /* SST     010 */
+    cmpi.w  #0xBFB5  , %d7   /* SST     010 */
     beq.b   Size128
-    cmpi.w  #0xBFB6  , %d7 /* SST     020 */
+    cmpi.w  #0xBFB6  , %d7   /* SST     020 */
     beq.b   Size256
-    cmpi.w  #0x0022  , %d7 /* AMD, T7/T8  */    
+    cmpi.w  #0x0022  , %d7   /* AMD, T7/T8  */    
     beq.b   Unicorns
 
 # Atmel
-    moveq.l #3       , %d6 /* Change drv  */
-    cmpi.w  #0x1F5D  , %d7 /* Atmel   512 */
+    moveq.l #3       , %d6   /* Change drv  */
+    cmpi.w  #0x1F5D  , %d7   /* Atmel   512 */
     beq.b   Size64    
-    cmpi.w  #0x1FD5  , %d7 /* Atmel   010 */
+    cmpi.w  #0x1FD5  , %d7   /* Atmel   010 */
     beq.b   Size128
-    cmpi.w  #0x1FDA  , %d7 /* Atmel   020 */
+    cmpi.w  #0x1FDA  , %d7   /* Atmel   020 */
     beq.b   Size256
     bra.b   UnkFlash    
 
 Unicorns:
-    moveq.l #16      , %d5 /* 256 K = 1 M */
-    cmpi.w  #0x2223  , %d3 /* Trionic 7   */
+    moveq.l #16      , %d5   /* 256 K = 1 M */
+    cmpi.w  #0x2223  , %d3   /* Trionic 7   */
     beq.b   Size128
-    cmpi.w  #0x2281  , %d3 /* Trionic 8   */
+    cmpi.w  #0x2281  , %d3   /* Trionic 8   */
     beq.b   Size256
     bra.b   UnkFlash
 Class29:
