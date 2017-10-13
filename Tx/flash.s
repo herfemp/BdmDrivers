@@ -5,7 +5,7 @@
 # Initialize CSPAR and all that stuff to base flash @ address 0
 # Initialize clock
 # if Trionic 5, 16,7 MHz is a must when equipped with original flash (Delays are calibrated for that)
-# If They have toggle-flash just go for 20 MHz. Motorola overengineered the crap out of these so no need to chickenshit on 16 MHz ECU's
+# If it has toggle/Atmel flash just go for 20 MHz. Motorola overengineered the crap out of these so no need to chickenshit on 16 MHz ECU's
 # Trionic 7 is locked to an external clock of 16 MHZ.
 # Trionic 8 can be run @ 32 MHz
 
