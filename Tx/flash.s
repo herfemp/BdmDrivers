@@ -56,7 +56,7 @@
 # If 0, something went wrong. _ABORT_
 
 # One last word about toggle-flash:
-# No, I'm _NOT_ going to implement the error-toggle used by AMD since I'd need another method on T7/T8!
+# No, I'm _NOT_ going to implement the damn error-toggle used by AMD since I'd need another method on T7/T8!
 # Just use a timer to detect if the driver gets stuck. Nothing can be done anyway..
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
