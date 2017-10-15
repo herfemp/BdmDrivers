@@ -1,5 +1,21 @@
 # Universal bdm driver
 
+# Known bugs / eventual problems:
+# 28Fxxx:
+# If format/write compare indicates a word as "not correct" only once, the optional "verify as regular data" step will be skipped.
+# The chance of this happening is astronomically small (and it's optional) so I'll leave it as is atm.
+
+
+
+
+
+
+
+
+
+
+
+
 # Usage:
 # Setup TPURAM or SRAM to 0x100000 ( Preferably the first since it's way faster )
 # Initialize CSPAR and all that stuff to base flash @ address 0
@@ -536,7 +552,7 @@ DecOO:
     beq.b   EndFF
     bra.b   BoostOO
 OOisOO:
-    cmpa.l  %a1    , %a2 
+    cmpa.l  %a1      , %a2 
     bcs.b   OOResTries
 
     # -:Format flash:-
