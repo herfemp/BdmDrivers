@@ -5,7 +5,7 @@
 # Initialize CSPAR and all that stuff to base flash @ address 0
 # Initialize clock
 # if Trionic 5, 16,7 MHz is a must when equipped with original flash (Delays are calibrated for that)
-# If They have toggle-flash just go for 20 MHz. Motorola overengineered the crap out of these so no need to chickenshit on 16 MHz ECU's
+# If it has toggle/Atmel flash just go for 20 MHz. Motorola overengineered the crap out of these so no need to chickenshit on 16 MHz ECU's
 # Trionic 7 is locked to an external clock of 16 MHZ.
 # Trionic 8 can be run @ 32 MHz
 
@@ -56,12 +56,13 @@
 # If 0, something went wrong. _ABORT_
 
 # One last word about toggle-flash:
-# No, I'm _NOT_ going to implement the error-toggle used by AMD since I'd need another method on T7/T8!
+# No, I'm _NOT_ going to implement the damn error-toggle used by AMD since I'd need another method on T7/T8!
 # Just use a timer to detect if the driver gets stuck. Nothing can be done anyway..
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
 	movea.l #0x100800,%sp /* Reset stack pointer */
 	
 	cmpi.b  #1, %d0
@@ -70,6 +71,8 @@
 	beq.b   FormatFlash	
 	cmpi.b  #3, %d0
 	beq.b   Syscfg
+    cmpi.b  #4, %d0 /* Special case: Init MCP */
+    beq.w   InitMCP
     bra.b   NiceTry
 
 WriteBuffer:
@@ -79,12 +82,14 @@ WriteBuffer:
     movea.l #0x100000, %a1
     move.w  #512     , %d1
     
-    cmpi.w  #1       , %d6  
+    cmpi.w  #1       , %d6
     beq.w   WriteBufferOLD
-    cmpi.w  #2       , %d6  
-    beq.w   WriteBufferNEW  
-    cmpi.w  #3       , %d6      
+    cmpi.w  #2       , %d6
+    beq.w   WriteBufferNEW
+    cmpi.w  #3       , %d6
     beq.w   WriteBufferAtmel
+    cmpi.w  #82      , %d6
+    beq.w   WriteBufferMCP
     bra.b   NiceTry
     
 FormatFlash:
@@ -94,11 +99,12 @@ FormatFlash:
     
     cmpi.w  #1       , %d6
     beq.w   FormatFlashOLD
-    cmpi.w  #2       , %d6   
-    beq.w   FormatFlashNEW      
+    cmpi.w  #2       , %d6
+    beq.w   FormatFlashNEW
     cmpi.w  #3       , %d6
-    beq.w   FormatFlashAtmel  
-
+    beq.w   FormatFlashAtmel
+    cmpi.w  #82      , %d6
+    beq.w   FormatFlashMCP
 NiceTry:
     bsr.b   Delay
     clr.l   %d0
@@ -514,20 +520,21 @@ OOResTries:
 
 OOloop:
     tst.w   (%a2)+
-    beq.b   OOisOO         
+    beq.b   OOisOO
+BoostOO:    
     move.w  #0x4040  ,-(%a2)
     clr.w   (%a2)        
     bsr.b   Delay_10uS  
     move.w  #0xC0C0  ,(%a2)
     bsr.b   Delay_6uS
-    tst.w   (%a2)
+    tst.w   (%a2)+
     bne.b   DecOO
-
-    clr.w   (%a2)
+    clr.w   -(%a2)
     bra.b   OOloop   
 DecOO:    
     subq.b  #1       , %d0 
     beq.b   EndFF
+    bra.b   BoostOO
 OOisOO:
     cmpa.l  %a1    , %a2 
     bcs.b   OOResTries
@@ -560,7 +567,7 @@ DecFF:
     subq.w  #1       , %d0
     beq.b   EndFF
 DataisFF:           
-    cmpa.l	%a1      , %a0 
+    cmpa.l	%a1      , %a0
     bcs.b   FFloop
     moveq.l #1       , %d0
    
@@ -574,7 +581,79 @@ bgnd
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #        
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# This code obv doesn't work yet. I'm working on it :)
+# Found another bug that forced me to push this
+
+Delay_50CK:
+    moveq.l #49      , %d5
+    bra.b   DelayMCP
+Delay_500CK:
+    move.w  #499     , %d5
+DelayMCP:
+    bra.b   SWSR
+    dbra    %d5,  DelayMCP   /* %d5 returns to FF..   */
+rts
+
+InitMCP:
+    bsr.b   SWSR             /* Service watchdog      */
+    moveq.l #1       , %d0   /* Store ack             */
+    moveq.l #82      , %d6   /* Set driver mode; MCP  */ /* Trionic EIGHT, cpu TWO in case you wonder about the numbering :) */
+    movea.l #0x40100 , %a1   /* Store last flash addr */
+    movea.l #0xFFF80C, %a4   /* Store addr of CMFICTL1*/
+    movea.l #0xFFF80E, %a5   /* Store addr of CMFICTL2*/    
+    movea.l #0xFFF800, %a6   /* Store addr of CMFIMCR */
+
+    ori.w   #0x8800  ,(%a6)  /* Stop CMFI/Negate lock */
+    clr.l   (0xFFF808)       /* Base CMFI @ addr 0    */
+    andi.w  #0x3FFF  ,(%a6)  /* Start/Negate shadow   */
+    bsr.b   Delay_500CK      /* Be nice to the host   */
+bgnd    
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    
+SWSR:
+    move.b  #0x55    ,(0xFFFA27)
+    move.b  #0xAA    ,(0xFFFA27)
+rts
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+# CMFIMCR:  0xFFF800
+# CMFITST:  0xFFF804
+# CMFIBAR:  0xFFF808
+# CMFICTL1: 0xFFF80C %a4
+# CMFICTL2: 0xFFF80E %a5
+# SYNCR:    0xFFFA04
+# SWSR:     0xFFFA27
+
+# %d6 = Flashmode (Do not change)
+
+WriteBufferMCP:
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+FormatFlashMCP:
+
+    andi.w  #0x3FFF  ,(%a6)  /* Negate shadow         */
+    move.w  #0x2250  ,(%a4)  /* Configure timings     */
+    clr.l   (0xFFF804)       /* CMFITST               */ /* Check this! */
+
+
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
 
 .align 4
 # Table for H/V flash:
