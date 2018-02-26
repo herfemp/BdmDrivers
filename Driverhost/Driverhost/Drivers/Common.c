@@ -40,8 +40,8 @@ inline uint8_t LDRDemand(uint8_t cmd, uint8_t End){
 	Exec_WriteCMD(0, 0, W_AREG_BDM+1, End,      0); // A1 = End addr
 	Exec_WriteCMD(0, 0, W_SREG_BDM,  0x10, 0x0400); // Set PC to start of driver
 	
-	if(Systype == 4) // MCP Hack; Set PC to start of driver
-		Exec_WriteCMD(0, 0, W_SREG_BDM, 0x08, 0x1BFC); 
+	// if(Systype == 4) // MCP Hack; Set PC to start of driver
+		// Exec_WriteCMD(0, 0, W_SREG_BDM, 0x08, 0x1BFC); 
     
 	ShiftData(0);
 	ShiftData_s(BDM_GO);
@@ -101,6 +101,54 @@ inline uint8_t LDRWrite(uint16_t SizeK){
 	return 1;
 }
 
+// Write flash data
+uint8_t LDRWriteMCP(){
+
+	uint16_t Had = 0;
+	uint16_t Lad = 0;
+	uint16_t Len = 1024 / 4;
+	uint16_t i;
+	uint16_t buf[2];
+
+	if(f_open( &Fil, "r11.bin", FA_OPEN_EXISTING | FA_READ ) == FR_OK){
+
+		///< _MUST_ be here.
+		SetPinDir(P_RST, 0);
+
+
+		Exec_WriteCMD(0, 0, W_DREG_BDM, 0, 1); // Store command in D0
+		Exec_WriteCMD(0, 0, W_AREG_BDM, 0, 0); // Store addr in A0
+	    do{ Exec_WriteCMD(0xF, 0xFFFC, WRITE32_BDM, 0,0); // Ugly solution to start the fill command at the right address..
+			
+			for(i=0; i<Len; i++){
+
+				f_read(&Fil, &buf, 4, &bw);
+				if(bw!=4) return 0;
+				Exec_FillCMD_p(&buf[0]); // This one will byteswap automatically
+			}
+			
+			Exec_WriteCMD(0, 0, W_SREG_BDM, 0x10, 0x0400); // Set PC to start of driver
+			Exec_WriteCMD(0, 0, 0, 0, 0);
+			ShiftData_s(BDM_GO);
+			
+			Lad += 1024;
+			if(!Lad)     Had ++;   // Increment The high counter when the low one has overflowed to 0
+			if(Had == 4) Len = 64; // Shadow-region; decrease size
+
+			// De-bounce
+			for(i=8; i>0; i--)
+				if(ReadPin(P_RST) && !ReadPin(P_FRZ) && i < 8) i +=2;
+
+			///< Read D0
+			Exec_ReadCMD(0, 0, R_DREG_BDM);
+			
+			// Check for errors
+			if(bdmresp16 != 1)          return 0;
+			if(Had == 4 && Lad > 256)   return 1;
+		}while(1);
+	}
+	return 0;
+}
 
 uint8_t Flash(uint16_t SizeK){
 
@@ -128,6 +176,33 @@ uint8_t Flash(uint16_t SizeK){
 		
 	return 1;
 }
+
+uint8_t FlashMCP(){
+
+	clrprintlcd("Prep..");
+	BenchTime=65535;
+	
+	if(!UploadDRV())
+	return 0;
+	clrprintlcd("Config..");
+	if(!LDRDemand(4, 0)) // Ask loader to configure everything
+	return 0;
+	
+	clrprintlcd("Format..");
+	if(!LDRDemand(2, 0)) // Format flash
+	return 0;
+	
+	clrprintlcd("Writing");
+	if(!LDRWriteMCP())
+	return 0;
+	
+	clrprintlcd("OK");
+	showval(65535 - BenchTime);
+	return 1;
+}
+
+
+
 
 #define nop3    __asm("nop\nnop\nnop");
 #define nop2    __asm("nop\nnop");

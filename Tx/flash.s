@@ -5,20 +5,9 @@
 # If format/write compare indicates a word as "not correct" only once, the optional "verify as regular data" step will be skipped.
 # The chance of this happening is astronomically small (and it's optional) so I'll leave it as is atm.
 
-
-
-
-
-
-
-
-
-
-
-
 # Usage:
 # Setup TPURAM or SRAM to 0x100000 ( Preferably the first since it's way faster )
-# Initialize CSPAR and all that stuff to base flash @ address 0
+# Initialize CSPAR and all that stuff to base flash @ address 0 (Does not apply to MCP)
 # Initialize clock
 # if Trionic 5, 16,7 MHz is a must when equipped with original flash (Delays are calibrated for that)
 # If it has toggle/Atmel flash just go for 20 MHz. Motorola overengineered the crap out of these so no need to chickenshit on 16 MHz ECU's
@@ -104,7 +93,7 @@ WriteBuffer:
     beq.w   WriteBufferNEW
     cmpi.w  #3       , %d6
     beq.w   WriteBufferAtmel
-    cmpi.w  #82      , %d6
+    cmpi.w  #4       , %d6
     beq.w   WriteBufferMCP
     bra.b   NiceTry
     
@@ -119,7 +108,7 @@ FormatFlash:
     beq.w   FormatFlashNEW
     cmpi.w  #3       , %d6
     beq.w   FormatFlashAtmel
-    cmpi.w  #82      , %d6
+    cmpi.w  #4       , %d6
     beq.w   FormatFlashMCP
 NiceTry:
     bsr.b   Delay
@@ -287,52 +276,6 @@ bgnd
 # Could never get the damn erase command to work.
 # We'll use Atmel's weird page write feature instead
 FormatFlashAtmel:
-/*
-    # Check for 29c020 since that requires a larger pagebuf
-    # moveq.l #63      , %d3
-    # cmpi.w  #0x1FDA  , %d7
-    # bne.b   FormatLoopAt
-    moveq.l #127     , %d3
-    
-FormatLoopAt:
-
-    movea.l %a0      , %a3
-    move.l  %d3      , %d0   
-CheckE: 
-    cmp.w   %d5      ,(%a3)+
-    bne.b   NotIdentAtE
-    dbra    %d0,      CheckE
-
-    movea.l %a3      , %a0
-    bra.b   DataIdentAtE
-
-NotIdentAtE:
-
-    movea.l %a0      , %a3
-    move.l  %d3      , %d0 
- 
-# Unlock
-    move.w  %a2      ,(%a2)
-    move.w  %d4      ,(%a6)
-    move.w  #0xA0A0  ,(%a2)
-  
-ErasePageAT:
-    move.w  %d5      ,(%a3)+
-    dbra    %d0, ErasePageAT
-
-    # bsr.w  Delay
-    # bsr.w  Delay
-    # bsr.w  Delay
-    
-AtmelWaitE:                   	
-    move.w  (%a0)    , %d0
-    cmp.w   (%a0)    , %d0
-    bne.b   AtmelWaitE 
-     
-DataIdentAtE:
-    cmpa.l  %a1      , %a0      
-    bcs.b   FormatLoopAt
-    */
     bsr.w   Delay
     moveq.l #1, %d0
 bgnd
@@ -342,19 +285,10 @@ bgnd
 
 # Ugly code is an understatement...
 WriteBufferAtmel:
-  
-    # I hate Atmel...
-    # One datasheet states 128 bytes for 512/010
-    # , another one 256. Guess which one is correct?
-    
-    # Check for 29c020 since that requires a larger pagebuf
-    # moveq.l #63      , %d3
-    # cmpi.w  #0x1FDA  , %d7
-    # bne.b   WriteLoopAt
+
     moveq.l #127     , %d3
 
 WriteLoopAt:
-
     movea.l %a0      , %a3 
     movea.l %a1      , %a4 
     move.w  %d3      , %d0
@@ -565,13 +499,9 @@ FFloop:
     move.w  %d1      ,-(%a0)
     move.w  %d1      ,(%a0)
 
-# TODO: Recalibrate with bne _.B_(!)
-    # I know. Long is wasting space..
-    move.l  #0x32C8  , %d3
-mSloop:
-    sub.l   #1       , %d3      
-    tst.l   %d3          
-    bne     mSloop
+    move.w  #0x4240  , %d3  /* Wait for 10~ mS (10,05 ish)     */
+mSloop:                     
+    dbra %d3, mSloop   
 
     move.w  #0xA0A0  ,(%a0)
     bsr.b   Delay_6uS            
@@ -599,67 +529,177 @@ bgnd
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# This code obv doesn't work yet. I'm working on it :)
-# Found another bug that forced me to push this
-
-Delay_50CK:
-    moveq.l #49      , %d5
-    bra.b   DelayMCP
-Delay_500CK:
-    move.w  #499     , %d5
-DelayMCP:
-    bra.b   SWSR
-    dbra    %d5,  DelayMCP   /* %d5 returns to FF..   */
-rts
+.equ CMFIMCR   , 0xFFF800
+.equ CMFICTL1  , 0xFFF80C
+.equ CMFICTL2  , 0xFFF80E
 
 InitMCP:
-    bsr.b   SWSR             /* Service watchdog      */
-    moveq.l #1       , %d0   /* Store ack             */
-    moveq.l #82      , %d6   /* Set driver mode; MCP  */ /* Trionic EIGHT, cpu TWO in case you wonder about the numbering :) */
-    movea.l #0x40100 , %a1   /* Store last flash addr */
-    movea.l #0xFFF80C, %a4   /* Store addr of CMFICTL1*/
-    movea.l #0xFFF80E, %a5   /* Store addr of CMFICTL2*/    
-    movea.l #0xFFF800, %a6   /* Store addr of CMFIMCR */
-
-    ori.w   #0x8800  ,(%a6)  /* Stop CMFI/Negate lock */
-    clr.l   (0xFFF808)       /* Base CMFI @ addr 0    */
-    andi.w  #0x3FFF  ,(%a6)  /* Start/Negate shadow   */
-    bsr.b   Delay_500CK      /* Be nice to the host   */
+    move.w  #0xD084  ,(0xfffa04) /* Set clock to 28 MHz */
+    movea.l #CMFIMCR , %a4
+    move.w  #0x9800  ,(%a4)      /* Stop CMFI           */
+    clr.l   (0xfff808)           /* Base at Addr 0      */
+    move.w  #0x1800  ,(%a4)      /* Start CMFI          */    
+    movea.l #CMFICTL1, %a5       /* Store some addrs    */
+    movea.l #CMFICTL2, %a6
+    clr.l   %d5
+    subq.l  #1       , %d5
+    moveq.l #4       , %d6 /* Set driver to MCP     */
+    moveq.l #1       , %d0
+    bsr.w   DisShadow
 bgnd    
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# Write functions
+
+WriteBufferMCP:
+
+    bsr.b   DisShadow                  /* Ugly but effective..           */
+    cmpa.l  #0x40000          , %a0
+    blt.b   VerifComp
+    bsr.b   EnaShadow                  /* Enable sahdow access           */
+    move.w  #128              , %d1    /* Shadow only has 128 words      */
+    suba.l  %a0               , %a0    /* Start writing from 0           */
+
+    # Check if page has to be written / Has been written
+VerifComp:
+    move.l  %a0               , %a2    /* Backup where to write          */
+    move.l  %a1               , %a3    /* Backup where to read           */
+VerifShrt:
+    moveq.l #64               , %d3    /* Number of bytes to compare     */
+    bsr.b   swsr
+PageCmpL:
+    cmpm.w  (%a2)+            ,(%a3)+
+    bne.b   WritePage
+    subq.l  #2                , %d3
+    bne.b   PageCmpL
+    move.l  %a2               , %a0    /* Update where to write          */
+    move.l  %a3               , %a1    /* Update where to read           */
+    sub.l   #32               , %d1    /* Decrement number of words left */
+    bne.b   VerifShrt
+bgnd
+
+WritePage:
+    move.l  %a0               , %d3
+    move.w  #0x100            , %d2
+    lsr.l   #8                , %d3    /* (Address >> 15)                */
+    lsr.l   #7                , %d3
+    lsl.w   %d3               , %d2    /* 0x100 << x                     */
+    move.b  #0x32             , %d2
+    move.w  %d2               ,(%a6)   /* Start session CMFICTL2         */
+
+    move.l  %a0               , %a2    /* Backup where to write          */
+    move.l  %a1               , %a3    /* Backup where to read           */
+    moveq.l #64               , %d3    /* Size of page                   */
+PageFill:
+    move.w  (%a3)+            ,(%a2)+
+    subq.w  #2                , %d3
+    bne.b   PageFill
     
-SWSR:
+WritePulse:
+    ori.w   #0x0001           ,(%a6)   /* Enable high voltage            */
+VppActiveW:                            /* Wait for VPP to go low         */
+    bsr.b   swsr
+    tst.w   (%a5)
+    bmi.b   VppActiveW
+    andi.w  #0xFFFE           ,(%a6)   /* Disable High voltage           */
+
+    # Perform margain read
+    move.l  %a0               , %a2    /* Backup where to write          */
+    moveq.l #64               , %d3    /* Size of page                   */
+MargainLW:
+    tst.b   (%a2)+
+    bne.b   WritePulse
+    subq.b  #1                , %d3
+    bne.b   MargainLW
+    andi.w  #0xFFFD           ,(%a6)   /* Negate session                 */
+    bra.b   VerifComp                  /* Go back for verification       */
+
+# # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # #
+
+swsr:
     move.b  #0x55    ,(0xFFFA27)
     move.b  #0xAA    ,(0xFFFA27)
 rts
 
+# Helper: Enable / disable shadow access
+DisShadow:
+    bsr.b   swsr
+    andi.w  #0xDFFF           ,(%a4)
+rts
+EnaShadow:
+    bsr.b   swsr
+    ori.w   #0x2000           ,(%a4)
+rts
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# CMFIMCR:  0xFFF800
-# CMFITST:  0xFFF804
-# CMFIBAR:  0xFFF808
-# CMFICTL1: 0xFFF80C %a4
-# CMFICTL2: 0xFFF80E %a5
-# SYNCR:    0xFFFA04
-# SWSR:     0xFFFA27
+# Erase functions
+# %a0: Start
+# %d1: Number of bytes to check. Will return 0 if everything is verified
+VerifBlock:
+    move.l  %a0               , %a1
+VerifL:
+    cmp.w   (%a1)+            , %d5
+    bne.b   VerifRet
+    subq.w  #2                , %d1
+    bne.b   VerifL
+VerifRet:
+rts
 
-# %d6 = Flashmode (Do not change)
-
-WriteBufferMCP:
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # #
 
 FormatFlashMCP:
 
-    andi.w  #0x3FFF  ,(%a6)  /* Negate shadow         */
-    move.w  #0x2250  ,(%a4)  /* Configure timings     */
-    clr.l   (0xFFF804)       /* CMFITST               */ /* Check this! */
+    move.w  #0x223C           ,(%a5) /* Configure timings */
+    bsr.b   DisShadow                /* Disable shadow    */
+    clr.l   %d0                      /* Clear counter     */
 
+EmaskLoop:
+    move.l  %d0               , %d3    /* Work on a copy of %d0                         */
+    move.w  #0x100            , %d2    /* Figure out which block to enable              */
+    lsl.w   %d3               , %d2    /* Shift block enabler to the left if required   */
+    mulu.l  #32768            , %d3    /* Calculate first address and store it in %a0   */
+    movea.l %d3               , %a0
 
+    move.b  #0x36             , %d2    /* Start session                                 */
+    move.w  %d2               ,(%a6)
+    move.w  %d5               ,(%a0)   /* Erase interlock                               */
+ErasePulse:
+    ori.w   #0x0001           ,(%a6)   /* Enable high voltage                           */
+VppActiveE:                            /* Wait for Vpp to go down                       */
+    bsr.b   swsr
+    tst.w   (%a5)
+    bmi.b   VppActiveE
+    andi.w  #0xFFFE           ,(%a6)   /* Disable High voltage                          */
+
+    move.w  #32768            , %d1    /* Check regular data                            */
+    bsr.b   VerifBlock
+    tst.w   %d1
+    bne.b   ErasePulse
+
+    tst.b   %d0                        /* Also check shadow if this is partition 0      */
+    bne.b   PartitionDone
+
+    bsr.b   EnaShadow                  /* Check shadow area                             */
+    move.w  #256              , %d1
+    bsr.b   VerifBlock
+    bsr.b   DisShadow
+    tst.w   %d1
+    bne.b   ErasePulse
+
+PartitionDone:
+    andi.w  #0xFFFD           ,(%a6)   /* 0x34                        */
+    addq.w  #1                , %d0
+    andi.b  #7                , %d0    /* 8&7 = 0 = quit              */
+    bne.b   EmaskLoop
+    andi.w  #0xFFF9           ,(%a6)   /* End session                 */
+    move.w  #0x200B           ,(%a5)   /* Configure timings for flash */
+    moveq.l #1                , %d0    /* Result is ok                */
+bgnd
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

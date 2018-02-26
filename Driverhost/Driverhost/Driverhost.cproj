@@ -28,17 +28,19 @@
     <eraseonlaunchrule>0</eraseonlaunchrule>
     <AsfFrameworkConfig>
       <framework-data>
-        <options />
-        <configurations />
-        <files />
-        <documentation help="" />
-        <offline-documentation help="" />
-        <dependencies>
-          <content-extension eid="atmel.asf" uuidref="Atmel.ASF" version="3.21.0" />
-        </dependencies>
-      </framework-data>
+  <options />
+  <configurations />
+  <files />
+  <documentation help="" />
+  <offline-documentation help="" />
+  <dependencies>
+    <content-extension eid="atmel.asf" uuidref="Atmel.ASF" version="3.26.0" />
+  </dependencies>
+</framework-data>
     </AsfFrameworkConfig>
     <avrtool />
+    <ResetRule>0</ResetRule>
+    <EraseKey />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <ToolchainSettings>
@@ -140,15 +142,6 @@
     <Compile Include="Drivers\Common.c">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="Drivers\T8CPU2\CPU2.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="Drivers\T8CPU2\CPU2.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="Drivers\T8CPU2\driver.bin.h">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="Drivers\TxDriver.bin.h">
       <SubType>compile</SubType>
     </Compile>
@@ -229,7 +222,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Drivers\T8CPU2\" />
     <Folder Include="HAL" />
     <Folder Include="HAL\HD44780" />
     <Folder Include="HAL\Disk" />

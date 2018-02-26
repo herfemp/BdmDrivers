@@ -99,7 +99,7 @@ uint16_t CSBARBT_t7 = ( 8<<8 | 7 );
 
 void PrepTrionic82(){
 	
-	Exec_WriteCMD(0xFF, 0xfb04, WRITE16_BDM,   0, 8);
+	Exec_WriteCMD(0xFF, 0xfb04, WRITE16_BDM,   0, 0x10);
 	Exec_WriteCMD(0xFF, 0xfb06, WRITE16_BDM,   0, 0);
 	Exec_WriteCMD(0xFF, 0xfb00, WRITE16_BDM,   0, 0x800);
 }
