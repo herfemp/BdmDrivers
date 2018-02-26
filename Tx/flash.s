@@ -13,17 +13,24 @@
 # If it has toggle/Atmel flash just go for 20 MHz. Motorola overengineered the crap out of these so no need to chickenshit on 16 MHz ECU's
 # Trionic 7 is locked to an external clock of 16 MHZ.
 # Trionic 8 can be run @ 32 MHz
+# Trionic 8 MCP can be set to anything, the driver will correct it to 28 MHz in the init-function.
 
 #######
 # Init:
 
 # Upload driver to 0x100400
-# Store 3 in register D0, (This tells the driver to initialize stuff)
+# Trionic 5, 7, 8 main:
+# Store 3 in register D0
+#
+# Trionic 8 MCP:
+# Store 4 in register D0
+# 
 # Set PC to 0x100400
 # Start it
 
 # When it enters bdm again:
 # Read D0, If it's 1 everything is OK, if not 1 _ABORT_!
+# Does not apply to MCP:
 # D7 contains manufacturer and device ID
 # D3 contains extended ID (Trionic 7 and 8)
 # D6 contains which type of flash (1 Trionic 5 stock flash, 2 toggle flash, 3 Atmel)
@@ -42,6 +49,7 @@
 
 # When it enters bdm again:
 # Read D0, If it's 1 everything is OK, if not 1 _ABORT_!
+# Does not apply to MCP:
 # A0 contains last address that was worked on (Only useful if something went wrong and you want to know where)
 
 ########
@@ -60,9 +68,14 @@
 # If 1, repeat loop. ( A0 autoincrements and D0 already is 1 )
 # If 0, something went wrong. _ABORT_
 
-# One last word about toggle-flash:
-# No, I'm _NOT_ going to implement the damn error-toggle used by AMD since I'd need another method on T7/T8!
-# Just use a timer to detect if the driver gets stuck. Nothing can be done anyway..
+
+
+
+# Notes about MCP:
+# The shadow region must be stored above everything in the binary file(0x40000 - 0x40100)
+# As you can see it's only 256 bytes so only upload that much the last time. The driver is aware of it and won't write more than necessary
+#
+# There is no retry-counter so expect it to get stuck if the flash is broken.
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
@@ -530,6 +543,7 @@ bgnd
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 .equ CMFIMCR   , 0xFFF800
+.equ STPCTL1   , 0xfff808
 .equ CMFICTL1  , 0xFFF80C
 .equ CMFICTL2  , 0xFFF80E
 
@@ -537,9 +551,10 @@ InitMCP:
     move.w  #0xD084  ,(0xfffa04) /* Set clock to 28 MHz */
     movea.l #CMFIMCR , %a4
     move.w  #0x9800  ,(%a4)      /* Stop CMFI           */
-    clr.l   (0xfff808)           /* Base at Addr 0      */
-    move.w  #0x1800  ,(%a4)      /* Start CMFI          */    
-    movea.l #CMFICTL1, %a5       /* Store some addrs    */
+    movea.l #STPCTL1 , %a5
+#   movea.l #CMFICTL1, %a5       /* Store some addrs    */
+    clr.l   (%a5)+               /* Base at Addr 0      *//* Will increment a5 to point @ CMFICTL1 */
+    move.w  #0x1800  ,(%a4)      /* Start CMFI          */
     movea.l #CMFICTL2, %a6
     clr.l   %d5
     subq.l  #1       , %d5
@@ -564,6 +579,13 @@ WriteBufferMCP:
 
     # Check if page has to be written / Has been written
 VerifComp:
+    move.l  %a0               , %d3    /* Which partition to enable      */
+    move.w  #0x100            , %d2
+    lsr.l   #8                , %d3    /* (Address >> 15)                */
+    lsr.l   #7                , %d3
+    lsl.w   %d3               , %d2    /* 0x100 << x                     */
+    move.b  #0x32             , %d2    /* xx << 8 | 0x32                 */
+VerifMC:
     move.l  %a0               , %a2    /* Backup where to write          */
     move.l  %a1               , %a3    /* Backup where to read           */
 VerifShrt:
@@ -581,14 +603,7 @@ PageCmpL:
 bgnd
 
 WritePage:
-    move.l  %a0               , %d3
-    move.w  #0x100            , %d2
-    lsr.l   #8                , %d3    /* (Address >> 15)                */
-    lsr.l   #7                , %d3
-    lsl.w   %d3               , %d2    /* 0x100 << x                     */
-    move.b  #0x32             , %d2
     move.w  %d2               ,(%a6)   /* Start session CMFICTL2         */
-
     move.l  %a0               , %a2    /* Backup where to write          */
     move.l  %a1               , %a3    /* Backup where to read           */
     moveq.l #64               , %d3    /* Size of page                   */
@@ -614,7 +629,7 @@ MargainLW:
     subq.b  #1                , %d3
     bne.b   MargainLW
     andi.w  #0xFFFD           ,(%a6)   /* Negate session                 */
-    bra.b   VerifComp                  /* Go back for verification       */
+    bra.b   VerifMC                    /* Go back for verification       */
 
 # # # # # # # # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # #
