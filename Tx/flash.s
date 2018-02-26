@@ -651,17 +651,28 @@ rts
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-# Erase functions
-# %a0: Start
-# %d1: Number of bytes to check. Will return 0 if everything is verified
-VerifBlock:
-    move.l  %a0               , %a1
-VerifL:
+MCPHardCheck:
+    movea.l #0x40000          , %a0 /* Last address    */
+    st.b    %d1                     /* Default to fail */
+HardStart:
+    suba.l  %a1               , %a1 /* Start from 0    */
+HardL:
+    bsr.b   swsr
     cmp.w   (%a1)+            , %d5
-    bne.b   VerifRet
-    subq.w  #2                , %d1
-    bne.b   VerifL
-VerifRet:
+    bne.b   HardRet
+    cmpa.l  %a0               , %a1
+    blt.b   HardL
+
+    bsr.b   EnaShadow
+    movea.l #0x100            , %a0
+    cmpa.w  %a0               , %a1
+    beq.b   ShadowVerifed
+    bra.b   HardStart
+
+ShadowVerifed:
+    clr.l   %d1
+HardRet:
+    bsr.b   DisShadow
 rts
 
 # # # # # # # # # # # # # # # # # # # #
@@ -673,48 +684,32 @@ FormatFlashMCP:
     bsr.b   DisShadow                /* Disable shadow    */
     clr.l   %d0                      /* Clear counter     */
 
-EmaskLoop:
-    move.l  %d0               , %d3    /* Work on a copy of %d0                         */
-    move.w  #0x100            , %d2    /* Figure out which block to enable              */
-    lsl.w   %d3               , %d2    /* Shift block enabler to the left if required   */
-    mulu.l  #32768            , %d3    /* Calculate first address and store it in %a0   */
-    movea.l %d3               , %a0
+FormatMCPL:
+    move.w  #0xFF36           ,(%a6) /* Start session     */
+    move.w  %d5               ,(%a0) /* Erase interlock   */
 
-    move.b  #0x36             , %d2    /* Start session                                 */
-    move.w  %d2               ,(%a6)
-    move.w  %d5               ,(%a0)   /* Erase interlock                               */
 ErasePulse:
-    ori.w   #0x0001           ,(%a6)   /* Enable high voltage                           */
-VppActiveE:                            /* Wait for Vpp to go down                       */
+    ori.w   #0x0001           ,(%a6) /* Enable highv      */
+VppActiveE:                          /* Wait for Vpp low  */
     bsr.b   swsr
     tst.w   (%a5)
     bmi.b   VppActiveE
-    andi.w  #0xFFFE           ,(%a6)   /* Disable High voltage                          */
+    andi.w  #0xFFFE           ,(%a6) /* Disable Highv     */
 
-    move.w  #32768            , %d1    /* Check regular data                            */
-    bsr.b   VerifBlock
-    tst.w   %d1
+    bsr.b   MCPHardCheck             /* Margain verify    */
+    tst.b   %d1
     bne.b   ErasePulse
 
-    tst.b   %d0                        /* Also check shadow if this is partition 0      */
-    bne.b   PartitionDone
+    andi.w  #0xFFFD           ,(%a6) /* 0x34              */
+    andi.w  #0xFFF9           ,(%a6) /* End session       */
 
-    bsr.b   EnaShadow                  /* Check shadow area                             */
-    move.w  #256              , %d1
-    bsr.b   VerifBlock
-    bsr.b   DisShadow
-    tst.w   %d1
-    bne.b   ErasePulse
+    bsr.b   MCPHardCheck             /* Check once more   */
+    tst.b   %d1
+    bne.b   FormatMCPL
 
-PartitionDone:
-    andi.w  #0xFFFD           ,(%a6)   /* 0x34                        */
-    addq.w  #1                , %d0
-    andi.b  #7                , %d0    /* 8&7 = 0 = quit              */
-    bne.b   EmaskLoop
-    andi.w  #0xFFF9           ,(%a6)   /* End session                 */
-    move.w  #0x200B           ,(%a5)   /* Configure timings for flash */
-    moveq.l #1                , %d0    /* Result is ok                */
-bgnd
+    moveq.l #1                , %d0  /* Finally done      */
+bgnd    
+    
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
